@@ -15,13 +15,14 @@ public sealed class TimeSeriesTests
         DateTimeOffset? start = null,
         decimal[]? values = null) =>
         TimeSeries.Create(
-            type,
-            biddingZone,
-            toBiddingZone,
-            MeasurementUnit.MW,
-            resolution,
-            start ?? _midnight,
-            values ?? [100m, 110m, 120m],
+            new TimeSeriesDefinition(
+                type,
+                biddingZone,
+                toBiddingZone,
+                MeasurementUnit.MW,
+                resolution,
+                start ?? _midnight,
+                values ?? [100m, 110m, 120m]),
             now: _midnight);
 
     private static void AssertSingleError(Result<TimeSeries> result, string field)

@@ -8,13 +8,14 @@ public sealed class TimeSeriesPointsTests
 
     // Eight quarter-hours from 00:00 to 02:00; each value equals its index, so results are easy to read.
     private static readonly TimeSeries _series = TimeSeries.Create(
-        TimeSeriesType.Production,
-        BiddingZone.SE3,
-        toBiddingZone: null,
-        MeasurementUnit.MW,
-        Resolution.PT15M,
-        _midnight,
-        [0m, 1m, 2m, 3m, 4m, 5m, 6m, 7m],
+        new TimeSeriesDefinition(
+            TimeSeriesType.Production,
+            BiddingZone.SE3,
+            ToBiddingZone: null,
+            MeasurementUnit.MW,
+            Resolution.PT15M,
+            _midnight,
+            [0m, 1m, 2m, 3m, 4m, 5m, 6m, 7m]),
         now: _midnight).Value;
 
     private static TimeInterval Window(int startMinutes, int endMinutes) =>

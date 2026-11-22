@@ -10,27 +10,16 @@ public sealed class TimeSeries
     /// <summary>One leap year at 15-minute resolution: 366 days * 96 periods.</summary>
     public const int MaxValues = 35_136;
 
-    private TimeSeries(
-        Guid id,
-        TimeSeriesType type,
-        BiddingZone biddingZone,
-        BiddingZone? toBiddingZone,
-        MeasurementUnit unit,
-        Resolution resolution,
-        DateTimeOffset start,
-        IReadOnlyList<decimal> values,
-        int version,
-        DateTimeOffset createdAt,
-        DateTimeOffset updatedAt)
+    private TimeSeries(Guid id, TimeSeriesDefinition definition, int version, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
         Id = id;
-        Type = type;
-        BiddingZone = biddingZone;
-        ToBiddingZone = toBiddingZone;
-        Unit = unit;
-        Resolution = resolution;
-        Start = start;
-        Values = values;
+        Type = definition.Type;
+        BiddingZone = definition.BiddingZone;
+        ToBiddingZone = definition.ToBiddingZone;
+        Unit = definition.Unit;
+        Resolution = definition.Resolution;
+        Start = definition.Start;
+        Values = Array.AsReadOnly(definition.Values.ToArray()); // a private copy: the caller's list cannot change the series
         Version = version;
         CreatedAt = createdAt;
         UpdatedAt = updatedAt;
@@ -83,35 +72,16 @@ public sealed class TimeSeries
     /// Creates a new series at version 1, or returns every broken rule. <paramref name="now"/> is passed in
     /// rather than read from the clock, so the domain stays deterministic and easy to test.
     /// </summary>
-    public static Result<TimeSeries> Create(
-        TimeSeriesType type,
-        BiddingZone biddingZone,
-        BiddingZone? toBiddingZone,
-        MeasurementUnit unit,
-        Resolution resolution,
-        DateTimeOffset start,
-        IReadOnlyList<decimal> values,
-        DateTimeOffset now)
+    public static Result<TimeSeries> Create(TimeSeriesDefinition definition, DateTimeOffset now)
     {
-        var errors = Validate(type, biddingZone, toBiddingZone, resolution, start, values);
+        var errors = Validate(definition);
         if (errors.Count > 0)
         {
             return Result<TimeSeries>.Failure(errors);
         }
 
         // Version 7 GUIDs are ordered by creation time, which keeps database indexes compact later.
-        var series = new TimeSeries(
-            Guid.CreateVersion7(now),
-            type,
-            biddingZone,
-            toBiddingZone,
-            unit,
-            resolution,
-            start,
-            Array.AsReadOnly(values.ToArray()), // a private copy: the caller's list cannot change the series
-            version: 1,
-            createdAt: now,
-            updatedAt: now);
+        var series = new TimeSeries(Guid.CreateVersion7(now), definition, version: 1, createdAt: now, updatedAt: now);
 
         return Result<TimeSeries>.Success(series);
     }
@@ -140,14 +110,9 @@ public sealed class TimeSeries
         }
     }
 
-    private static List<ValidationError> Validate(
-        TimeSeriesType type,
-        BiddingZone biddingZone,
-        BiddingZone? toBiddingZone,
-        Resolution resolution,
-        DateTimeOffset start,
-        IReadOnlyList<decimal> values)
+    private static List<ValidationError> Validate(TimeSeriesDefinition definition)
     {
+        var (type, biddingZone, toBiddingZone, _, resolution, start, values) = definition;
         var errors = new List<ValidationError>();
 
         if (start.Offset != TimeSpan.Zero)
