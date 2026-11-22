@@ -35,6 +35,14 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
         return Ok(result.Value);
     }
 
+    [HttpGet]
+    public async Task<IActionResult> Search([FromQuery] SearchQuery query, CancellationToken cancellationToken)
+    {
+        var result = await service.SearchAsync(query, cancellationToken);
+
+        return result.IsSuccess ? Ok(result.Value) : this.ToActionResult(result.Error);
+    }
+
     // A strong ETag is a quoted string; the version is all a client needs to send back in If-Match.
     private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = $"\"{series.Version}\"";
 }

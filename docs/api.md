@@ -86,12 +86,13 @@ GET /api/v1/time-series?biddingZone=DK1&type=CrossBorderFlow&from=2026-11-27T00:
 |---|---|---|
 | `biddingZone` | No | Matches `biddingZone` or `toBiddingZone`, so flows into and out of the zone are both returned |
 | `type` | No | `Production`, `Consumption` or `CrossBorderFlow` |
-| `from`, `to` | No | Half-open interval `[from, to)`. If both are given, `from` must be before `to` and the window can be at most 31 days |
-| `page`, `pageSize` | No | Defaults 1 and 50; maximum page size 200 |
+| `from`, `to` | No | Half-open interval `[from, to)` as UTC timestamps (for example `2026-11-27T00:00:00Z`). Give both or neither; `from` must be before `to` and the window can be at most 31 days |
+| `page`, `pageSize` | No | Defaults 1 and 50; `page` at least 1, `pageSize` 1 to 200 |
 
 Behaviour:
 
-- A series is returned if its period **overlaps** `[from, to)`.
+- A series is returned if its period **overlaps** `[from, to)`. Results are ordered by `start`, then type and zones, so paging is stable.
+- Invalid parameters return **400** with an error per parameter.
 - The returned `points` are **clipped** to the requested window, so the client gets exactly the window it asked for: a point is included when its timestamp lies in `[from, to)`.
 
 **200 OK**

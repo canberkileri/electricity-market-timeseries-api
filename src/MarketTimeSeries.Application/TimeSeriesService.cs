@@ -30,6 +30,23 @@ public sealed class TimeSeriesService(ITimeSeriesRepository repository, TimeProv
         return series is null ? NotFoundError(id) : TimeSeriesResponse.From(series);
     }
 
+    public async Task<OperationResult<PagedResponse<TimeSeriesResponse>>> SearchAsync(SearchQuery query, CancellationToken cancellationToken)
+    {
+        var criteria = query.ToCriteria();
+        if (!criteria.IsSuccess)
+        {
+            return Error.Validation(criteria.Errors);
+        }
+
+        var page = await repository.SearchAsync(criteria.Value, cancellationToken);
+
+        return new PagedResponse<TimeSeriesResponse>(
+            [.. page.Items.Select(series => TimeSeriesResponse.From(series, criteria.Value.Window))],
+            criteria.Value.Page,
+            criteria.Value.PageSize,
+            page.TotalCount);
+    }
+
     private static Error NotFoundError(Guid id) => Error.NotFound($"Time series {id} was not found.");
 
     private static Error OverlapError(TimeSeries series)

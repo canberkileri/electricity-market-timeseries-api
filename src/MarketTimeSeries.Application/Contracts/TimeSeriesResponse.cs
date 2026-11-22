@@ -14,7 +14,8 @@ public sealed record TimeSeriesResponse(
     int Version,
     IReadOnlyList<PointResponse> Points)
 {
-    public static TimeSeriesResponse From(TimeSeries series) => new(
+    /// <summary>Maps a series; with a window, only the points whose timestamp lies inside it are included.</summary>
+    public static TimeSeriesResponse From(TimeSeries series, TimeInterval? window = null) => new(
         series.Id,
         series.Type,
         series.BiddingZone,
@@ -24,7 +25,8 @@ public sealed record TimeSeriesResponse(
         series.Start,
         series.End,
         series.Version,
-        [.. series.Points.Select(point => new PointResponse(point.Timestamp, point.Value))]);
+        [.. (window is { } clip ? series.PointsWithin(clip) : series.Points)
+            .Select(point => new PointResponse(point.Timestamp, point.Value))]);
 }
 
 public sealed record PointResponse(DateTimeOffset Timestamp, decimal Value);
