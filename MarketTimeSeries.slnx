@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/MarketTimeSeries.Api/MarketTimeSeries.Api.csproj" />
+    <Project Path="src/MarketTimeSeries.Application/MarketTimeSeries.Application.csproj" />
+    <Project Path="src/MarketTimeSeries.Domain/MarketTimeSeries.Domain.csproj" />
+    <Project Path="src/MarketTimeSeries.Infrastructure/MarketTimeSeries.Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/MarketTimeSeries.IntegrationTests/MarketTimeSeries.IntegrationTests.csproj" />
+  </Folder>
+</Solution>
