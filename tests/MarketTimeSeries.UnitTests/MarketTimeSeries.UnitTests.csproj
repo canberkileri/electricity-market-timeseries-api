@@ -17,6 +17,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\MarketTimeSeries.Domain\MarketTimeSeries.Domain.csproj" />
     <ProjectReference Include="..\..\src\MarketTimeSeries.Application\MarketTimeSeries.Application.csproj" />
+    <ProjectReference Include="..\..\src\MarketTimeSeries.Infrastructure\MarketTimeSeries.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>
