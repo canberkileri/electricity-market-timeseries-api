@@ -43,6 +43,30 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
         return result.IsSuccess ? Ok(result.Value) : this.ToActionResult(result.Error);
     }
 
-    // A strong ETag is a quoted string; the version is all a client needs to send back in If-Match.
-    private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = $"\"{series.Version}\"";
+    [HttpPut("{id:guid}")]
+    public async Task<IActionResult> Update(
+        Guid id,
+        TimeSeriesRequest request,
+        [FromHeader(Name = "If-Match")] string? ifMatch,
+        CancellationToken cancellationToken)
+    {
+        if (!ETags.TryParseIfMatch(ifMatch, out var expectedVersion))
+        {
+            return Problem(
+                "If-Match must be the ETag of the series, for example \"1\", or *.",
+                statusCode: StatusCodes.Status400BadRequest,
+                title: "Invalid If-Match header");
+        }
+
+        var result = await service.UpdateAsync(id, request.ToDefinition(), expectedVersion, cancellationToken);
+        if (!result.IsSuccess)
+        {
+            return this.ToActionResult(result.Error);
+        }
+
+        SetETag(result.Value);
+        return Ok(result.Value);
+    }
+
+    private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = ETags.Format(series.Version);
 }

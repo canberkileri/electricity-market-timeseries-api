@@ -119,7 +119,8 @@ If-Match: "1"
 ```
 
 - `PUT` replaces the whole series.
-- `If-Match` is optional. If it is sent and does not match the current version, the API returns **412 Precondition Failed**.
+- `If-Match` is optional. If it is sent and does not match the current version, the API returns **412 Precondition Failed** and nothing changes. `*` means any version. A value that is not a single version ETag such as `"1"` returns **400**.
+- Without `If-Match` the last write wins, but an update is still never lost silently: if another request changes the series while this one runs, the API returns **412**.
 - **200 OK** with the updated series and the new `ETag`. Other errors: **400**, **404**, **409**.
 
 ---

@@ -47,6 +47,46 @@ public sealed class TimeSeriesService(ITimeSeriesRepository repository, TimeProv
             page.TotalCount);
     }
 
+    /// <summary>
+    /// Replaces a series (PUT). <paramref name="expectedVersion"/> comes from If-Match; null means "any version".
+    /// The repository checks the version again when it writes, so an update made by someone else between the
+    /// read and the write is never lost, even when the client sent no If-Match.
+    /// </summary>
+    public async Task<OperationResult<TimeSeriesResponse>> UpdateAsync(
+        Guid id,
+        TimeSeriesDefinition definition,
+        int? expectedVersion,
+        CancellationToken cancellationToken)
+    {
+        var current = await repository.GetAsync(id, cancellationToken);
+        if (current is null)
+        {
+            return NotFoundError(id);
+        }
+
+        if (expectedVersion is { } expected && expected != current.Version)
+        {
+            return Error.PreconditionFailed(
+                $"If-Match is version {expected}, but the current version is {current.Version}. Read the series again and retry.");
+        }
+
+        var replaced = current.Replace(definition, timeProvider.GetUtcNow());
+        if (!replaced.IsSuccess)
+        {
+            return Error.Validation(replaced.Errors);
+        }
+
+        return await repository.ReplaceAsync(replaced.Value, current.Version, cancellationToken) switch
+        {
+            WriteOutcome.Done => TimeSeriesResponse.From(replaced.Value),
+            WriteOutcome.NotFound => NotFoundError(id), // deleted after we read it
+            WriteOutcome.VersionMismatch => Error.PreconditionFailed(
+                "The series was changed by another request while this update ran. Read it again and retry."),
+            WriteOutcome.Conflict => OverlapError(replaced.Value),
+            _ => throw new InvalidOperationException("Unknown write outcome."),
+        };
+    }
+
     private static Error NotFoundError(Guid id) => Error.NotFound($"Time series {id} was not found.");
 
     private static Error OverlapError(TimeSeries series)
