@@ -7,7 +7,7 @@ public sealed class HealthEndpointTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
     [Fact]
-    public async Task Health_endpoint_returns_200_OK()
+    public async Task GetHealth_ApiIsRunning_Returns200Ok()
     {
         using var client = factory.CreateClient();
 
