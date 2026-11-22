@@ -1,7 +1,7 @@
-using System.Text.Json.Serialization;
 using MarketTimeSeries.Api.Http;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Infrastructure;
+using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,14 +13,15 @@ builder.Services
     })
     .AddJsonOptions(options =>
     {
-        // Enums travel as their names ("SE3", "PT15M"); numbers such as 5 are rejected.
-        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
-        options.JsonSerializerOptions.Converters.Add(new UtcDateTimeOffsetConverter());
+        JsonSetup.Configure(options.JsonSerializerOptions);
         // Do not echo .NET type names from JSON errors back to clients.
         options.AllowInputFormatterExceptionMessages = false;
     })
     .ConfigureApiBehaviorOptions(options => options.InvalidModelStateResponseFactory = ErrorResponses.InvalidModelState);
 
+// The OpenAPI document reads these general JSON options, so they get the same rules as the controllers.
+builder.Services.ConfigureHttpJsonOptions(options => JsonSetup.Configure(options.SerializerOptions));
+builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TimeSeriesService>();
@@ -33,6 +34,13 @@ var app = builder.Build();
 app.UseExceptionHandler();
 // Empty error responses, such as 404 for an unknown route, also get a Problem Details body.
 app.UseStatusCodePages();
+
+if (app.Environment.IsDevelopment())
+{
+    // The OpenAPI document at /openapi/v1.json and an interactive UI at /scalar.
+    app.MapOpenApi();
+    app.MapScalarApiReference();
+}
 
 app.MapControllers();
 app.MapHealthChecks("/health");

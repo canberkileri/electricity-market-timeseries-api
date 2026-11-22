@@ -6,6 +6,10 @@ namespace MarketTimeSeries.Application.Contracts;
 /// <summary>Query string of the search endpoint. Every filter is optional.</summary>
 public sealed record SearchQuery
 {
+    public const int DefaultPage = 1;
+
+    public const int DefaultPageSize = 50;
+
     public const int MaxPageSize = 200;
 
     public static readonly TimeSpan MaxWindow = TimeSpan.FromDays(31);
@@ -24,9 +28,9 @@ public sealed record SearchQuery
 
     public string? To { get; init; }
 
-    public int Page { get; init; } = 1;
+    public int Page { get; init; } = DefaultPage;
 
-    public int PageSize { get; init; } = 50;
+    public int PageSize { get; init; } = DefaultPageSize;
 
     /// <summary>Checks the query and turns it into repository criteria, or returns every problem found.</summary>
     public Result<SearchCriteria> ToCriteria()
