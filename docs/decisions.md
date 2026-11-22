@@ -58,7 +58,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 ## 6. Optimistic concurrency with ETag and If-Match
 
-**Decision:** Each series has a `version`, starting at 1 and increased on every update, returned as the `ETag`. `PUT` accepts an optional `If-Match`; if it does not match, the API returns `412 Precondition Failed` and changes nothing.
+**Decision:** Each series has a `version`, starting at 1 and increased on every update, returned as the `ETag`. `PUT` and `DELETE` accept an optional `If-Match`; if it does not match, the API returns `412 Precondition Failed` and changes nothing.
 
 **Why:** Prevents lost updates when two clients edit the same series, using standard HTTP and without holding locks between requests.
 

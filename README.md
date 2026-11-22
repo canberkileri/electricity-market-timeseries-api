@@ -33,7 +33,7 @@ In Development the API starts with three sample series for the current UTC day (
 | Get | `GET /api/v1/time-series/{id}` | `200` with `ETag` | `404` |
 | Search | `GET /api/v1/time-series?biddingZone=&type=&from=&to=&page=&pageSize=` | `200`, paged | `400` |
 | Update | `PUT /api/v1/time-series/{id}`, optional `If-Match` | `200` with new `ETag` | `400`, `404`, `409`, `412` |
-| Delete | `DELETE /api/v1/time-series/{id}` | `204` | `404` |
+| Delete | `DELETE /api/v1/time-series/{id}`, optional `If-Match` | `204` | `400`, `404`, `412` |
 
 A request sends `start`, `resolution` and one value per period; the response adds `id`, `end`, `version` and calculated `points`. All errors are [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457). Examples and every rule are in [docs/api.md](docs/api.md).
 

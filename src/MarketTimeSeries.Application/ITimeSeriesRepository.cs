@@ -23,6 +23,9 @@ public interface ITimeSeriesRepository
     /// </summary>
     Task<WriteOutcome> ReplaceAsync(TimeSeries replacement, int expectedVersion, CancellationToken cancellationToken);
 
-    /// <summary>True if the series existed and was removed.</summary>
-    Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken);
+    /// <summary>
+    /// Removes the series if it exists and, when <paramref name="expectedVersion"/> is given, still has that version:
+    /// <see cref="WriteOutcome.Done"/>, <see cref="WriteOutcome.NotFound"/> or <see cref="WriteOutcome.VersionMismatch"/>.
+    /// </summary>
+    Task<WriteOutcome> DeleteAsync(Guid id, int? expectedVersion, CancellationToken cancellationToken);
 }

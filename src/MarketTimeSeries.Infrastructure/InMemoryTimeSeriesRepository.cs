@@ -79,12 +79,23 @@ public sealed class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         }
     }
 
-    public Task<bool> DeleteAsync(Guid id, CancellationToken cancellationToken)
+    public Task<WriteOutcome> DeleteAsync(Guid id, int? expectedVersion, CancellationToken cancellationToken)
     {
         // Also under the lock: otherwise a replace that already found the series could store it again after the delete.
         lock (_writeLock)
         {
-            return Task.FromResult(_series.TryRemove(id, out _));
+            if (!_series.TryGetValue(id, out var stored))
+            {
+                return Task.FromResult(WriteOutcome.NotFound);
+            }
+
+            if (expectedVersion is { } expected && stored.Version != expected)
+            {
+                return Task.FromResult(WriteOutcome.VersionMismatch);
+            }
+
+            _series.TryRemove(id, out _);
+            return Task.FromResult(WriteOutcome.Done);
         }
     }
 

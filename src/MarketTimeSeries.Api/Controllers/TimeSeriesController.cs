@@ -90,10 +90,7 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
     {
         if (!ETags.TryParseIfMatch(ifMatch, out var expectedVersion))
         {
-            return Problem(
-                "If-Match must be the ETag of the series, for example \"1\", or *.",
-                statusCode: StatusCodes.Status400BadRequest,
-                title: "Invalid If-Match header");
+            return InvalidIfMatch();
         }
 
         var result = await service.UpdateAsync(id, request.ToDefinition(), expectedVersion, cancellationToken);
@@ -109,13 +106,28 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
     [HttpDelete("{id:guid}")]
     [EndpointSummary("Delete a time series")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status400BadRequest, ProblemJson)]
     [ProducesResponseType<ProblemDetails>(StatusCodes.Status404NotFound, ProblemJson)]
-    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    [ProducesResponseType<ProblemDetails>(StatusCodes.Status412PreconditionFailed, ProblemJson)]
+    public async Task<IActionResult> Delete(
+        Guid id,
+        [FromHeader(Name = "If-Match")] string? ifMatch,
+        CancellationToken cancellationToken)
     {
-        var result = await service.DeleteAsync(id, cancellationToken);
+        if (!ETags.TryParseIfMatch(ifMatch, out var expectedVersion))
+        {
+            return InvalidIfMatch();
+        }
+
+        var result = await service.DeleteAsync(id, expectedVersion, cancellationToken);
 
         return result.IsSuccess ? NoContent() : this.ToActionResult(result.Error);
     }
+
+    private ObjectResult InvalidIfMatch() => Problem(
+        "If-Match must be the ETag of the series, for example \"1\", or *.",
+        statusCode: StatusCodes.Status400BadRequest,
+        title: "Invalid If-Match header");
 
     private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = ETags.Format(series.Version);
 }

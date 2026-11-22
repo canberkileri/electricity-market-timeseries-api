@@ -91,8 +91,16 @@ public sealed class TimeSeriesService(ITimeSeriesRepository repository, TimeProv
         };
     }
 
-    public async Task<OperationResult<Deleted>> DeleteAsync(Guid id, CancellationToken cancellationToken) =>
-        await repository.DeleteAsync(id, cancellationToken) ? new Deleted() : NotFoundError(id);
+    /// <summary>Deletes a series. <paramref name="expectedVersion"/> comes from If-Match; null means "any version".</summary>
+    public async Task<OperationResult<Deleted>> DeleteAsync(Guid id, int? expectedVersion, CancellationToken cancellationToken) =>
+        await repository.DeleteAsync(id, expectedVersion, cancellationToken) switch
+        {
+            WriteOutcome.Done => new Deleted(),
+            WriteOutcome.NotFound => NotFoundError(id),
+            WriteOutcome.VersionMismatch => Error.PreconditionFailed(
+                $"If-Match is version {expectedVersion}, but the series has changed since. Read it again before deleting."),
+            _ => throw new InvalidOperationException("Unknown write outcome."),
+        };
 
     private static Error NotFoundError(Guid id) => Error.NotFound($"Time series {id} was not found.");
 

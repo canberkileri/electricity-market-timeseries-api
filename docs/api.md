@@ -132,9 +132,10 @@ If-Match: "1"
 
 ```http
 DELETE /api/v1/time-series/{id}
+If-Match: "2"
 ```
 
-**204 No Content**, or **404 Not Found**.
+**204 No Content**, or **404 Not Found**. `If-Match` is optional and works as for `PUT`: a stale version returns **412** and the series is kept, so nobody deletes a series that was just corrected.
 
 ---
 

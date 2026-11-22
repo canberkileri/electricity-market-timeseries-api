@@ -125,14 +125,26 @@ public sealed class InMemoryTimeSeriesRepositoryTests
     }
 
     [Fact]
-    public async Task DeleteAsync_StoredSeries_ReturnsTrueAndRemovesIt()
+    public async Task DeleteAsync_StoredSeries_ReturnsDoneAndRemovesIt()
     {
         var series = Series();
         await _repository.AddAsync(series, Ct);
 
-        Assert.True(await _repository.DeleteAsync(series.Id, Ct));
+        Assert.Equal(WriteOutcome.Done, await _repository.DeleteAsync(series.Id, expectedVersion: null, Ct));
         Assert.Null(await _repository.GetAsync(series.Id, Ct));
-        Assert.False(await _repository.DeleteAsync(series.Id, Ct));
+        Assert.Equal(WriteOutcome.NotFound, await _repository.DeleteAsync(series.Id, expectedVersion: null, Ct));
+    }
+
+    [Fact]
+    public async Task DeleteAsync_StaleExpectedVersion_ReturnsVersionMismatchAndKeepsSeries()
+    {
+        var series = Series();
+        await _repository.AddAsync(series, Ct);
+
+        var outcome = await _repository.DeleteAsync(series.Id, expectedVersion: 2, Ct);
+
+        Assert.Equal(WriteOutcome.VersionMismatch, outcome);
+        Assert.Same(series, await _repository.GetAsync(series.Id, Ct));
     }
 
     [Fact]

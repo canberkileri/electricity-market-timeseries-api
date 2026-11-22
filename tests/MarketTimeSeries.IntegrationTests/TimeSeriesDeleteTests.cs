@@ -22,6 +22,13 @@ public sealed class TimeSeriesDeleteTests(ApiFactory factory)
     private async Task<HttpResponseMessage> CreateAsync(DateTime start) =>
         await _client.PostAsJsonAsync(BasePath, Consumption(start), Ct);
 
+    private Task<HttpResponseMessage> DeleteAsync(Uri location, string ifMatch)
+    {
+        var message = new HttpRequestMessage(HttpMethod.Delete, location);
+        message.Headers.TryAddWithoutValidation("If-Match", ifMatch);
+        return _client.SendAsync(message, Ct);
+    }
+
     [Fact]
     public async Task Delete_StoredSeries_Returns204AndGetReturns404()
     {
@@ -31,6 +38,27 @@ public sealed class TimeSeriesDeleteTests(ApiFactory factory)
 
         Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, (await _client.GetAsync(location, Ct)).StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_MatchingIfMatch_Returns204()
+    {
+        var location = (await CreateAsync(UniqueDay())).Headers.Location!;
+
+        var response = await DeleteAsync(location, ifMatch: "\"1\"");
+
+        Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+    }
+
+    [Fact]
+    public async Task Delete_StaleIfMatch_Returns412AndKeepsSeries()
+    {
+        var location = (await CreateAsync(UniqueDay())).Headers.Location!;
+
+        var response = await DeleteAsync(location, ifMatch: "\"7\"");
+
+        Assert.Equal(HttpStatusCode.PreconditionFailed, response.StatusCode);
+        Assert.Equal(HttpStatusCode.OK, (await _client.GetAsync(location, Ct)).StatusCode);
     }
 
     [Fact]
