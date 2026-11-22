@@ -72,6 +72,6 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Why:** One error shape for every endpoint, possible outcomes visible in method signatures, and no stack traces leaked to clients.
 
-**Rejected:** a custom error format (clients learn something new); exceptions for every error (exceptions as normal control flow).
+**Rejected:** a custom error format (clients learn something new); exceptions for every error (exceptions as normal control flow); a validation library such as FluentValidation (the same rules would be written twice, in a validator and in the domain).
 
-**Consequences:** validation runs twice by design: request rules in Application for clear field messages, and the domain guards its own invariants so no path can create an invalid series. Every Problem Details response includes a `traceId`, so a client error can be matched with server logs.
+**Consequences:** validation has two layers and no library. ASP.NET Core model validation checks the request shape (required fields, known enum names). `TimeSeries.Create` checks the business rules and returns every broken rule at once as a `Result`; its constructor is private, so no path can create an invalid series. Exceptions are left for programming errors. Every Problem Details response includes a `traceId`, so a client error can be matched with server logs.
