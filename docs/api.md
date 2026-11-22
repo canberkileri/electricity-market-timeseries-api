@@ -1,6 +1,6 @@
 # API reference
 
-Base path: `/api/v1/time-series`. All timestamps are UTC in ISO 8601 format. All errors use [Problem Details (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457).
+Base path: `/api/v1/time-series`. All timestamps are UTC in ISO 8601 format and are returned with `Z`. Request timestamps must include an offset, and only `Z` (`+00:00`) is accepted. All errors use [Problem Details (RFC 9457)](https://www.rfc-editor.org/rfc/rfc9457).
 
 ---
 
@@ -41,7 +41,7 @@ Content-Type: application/json
 **201 Created**
 
 ```http
-Location: /api/v1/time-series/6f1c2a7e-0d7b-4c8e-9a1f-2b3c4d5e6f70
+Location: http://localhost:5080/api/v1/time-series/6f1c2a7e-0d7b-4c8e-9a1f-2b3c4d5e6f70
 ETag: "1"
 ```
 
