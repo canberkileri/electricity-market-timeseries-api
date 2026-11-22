@@ -1,0 +1,93 @@
+# Electricity Market Time Series API
+
+![CI](https://github.com/canberkileri/electricity-market-timeseries-api/actions/workflows/ci.yml/badge.svg)
+
+A small REST API in C# and ASP.NET Core (.NET 10) for managing electricity market time series: production, consumption and cross-border flows between the Nordic bidding zones. It supports create, read, update and delete, and filtering by bidding zone and time interval. Built as a take-home assignment.
+
+## Quick start
+
+**Prerequisite:** [.NET 10 SDK](https://dotnet.microsoft.com/download)
+
+```bash
+git clone https://github.com/canberkileri/electricity-market-timeseries-api.git
+cd electricity-market-timeseries-api
+
+dotnet run --project src/MarketTimeSeries.Api   # http://localhost:5080, Development environment
+dotnet test                                     # all unit and integration tests
+```
+
+Then open:
+
+- **Scalar (interactive API docs):** `http://localhost:5080/scalar`
+- **OpenAPI document:** `/openapi/v1.json`
+- **Health check:** `/health`
+- **Ready-made requests:** [`src/MarketTimeSeries.Api/TimeSeries.http`](src/MarketTimeSeries.Api/TimeSeries.http), every operation in order, including the `400`, `409` and `412` cases
+
+In Development the API starts with three sample series for the current UTC day (SE3 production, DK1 consumption, a DK1 to SE3 flow). Data is kept in memory and lost on restart.
+
+## API overview
+
+| Operation | Request | Success | Errors |
+|---|---|---|---|
+| Create | `POST /api/v1/time-series` | `201` with `Location` and `ETag` | `400`, `409` |
+| Get | `GET /api/v1/time-series/{id}` | `200` with `ETag` | `404` |
+| Search | `GET /api/v1/time-series?biddingZone=&type=&from=&to=&page=&pageSize=` | `200`, paged | `400` |
+| Update | `PUT /api/v1/time-series/{id}`, optional `If-Match` | `200` with new `ETag` | `400`, `404`, `409`, `412` |
+| Delete | `DELETE /api/v1/time-series/{id}` | `204` | `404` |
+
+A request sends `start`, `resolution` and one value per period; the response adds `id`, `end`, `version` and calculated `points`. All errors are [RFC 9457 Problem Details](https://www.rfc-editor.org/rfc/rfc9457). Examples and every rule are in [docs/api.md](docs/api.md).
+
+## Architecture
+
+A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage.
+
+```mermaid
+flowchart LR
+    Api[MarketTimeSeries.Api<br/>controller, Problem Details, OpenAPI] --> Application
+    Infrastructure[MarketTimeSeries.Infrastructure<br/>in-memory repository] --> Application
+    Application[MarketTimeSeries.Application<br/>use cases, contracts, repository port] --> Domain
+    Domain[MarketTimeSeries.Domain<br/>time series aggregate and its rules]
+```
+
+Tests live in `tests/` (unit and integration); design notes in `docs/`.
+
+## Design decisions
+
+Recorded in a short ADR format in [docs/decisions.md](docs/decisions.md):
+
+1. Clean Architecture with four thin projects, and no more.
+2. A series is a header plus `start`, `resolution` and `values`, as in ENTSO-E documents.
+3. All times in UTC; intervals are half-open `[from, to)`.
+4. In-memory storage behind a repository interface; writes are atomic.
+5. Overlapping series with the same identity are rejected with `409`.
+6. Optimistic concurrency with `ETag` and `If-Match`.
+7. Problem Details for every error; expected failures are results, not exceptions; no validation library.
+
+The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.md).
+
+## Assumptions
+
+- **Zones:** the 12 Nordic bidding zones (NO1 to NO5, SE1 to SE4, FI, DK1, DK2) by short code.
+- **Types:** `Production`, `Consumption`, `CrossBorderFlow`. A flow goes from `biddingZone` to `toBiddingZone`; a negative value means the reverse direction. Searching by zone returns flows at either end.
+- **Unit and resolution:** MW (average power per period); `PT15M` or `PT60M`.
+- **Time:** UTC only (`Z`), with `start` aligned to the resolution.
+- **Values:** 1 to 35,136 per series (a leap year of quarter-hours), no gaps; production and consumption are zero or positive.
+- **Search:** `from` and `to` together, at most 31 days; returned points are clipped to the window; pages of 50 by default, 200 at most.
+- **Updates:** `PUT` replaces the whole series. No authentication, since this is an assignment.
+
+## Testing
+
+`dotnet test` runs both suites, and GitHub Actions runs them on every push and pull request to `main`.
+
+- **Unit tests:** domain rules (alignment, flow direction, value rules, overlap, clipping, versioning) and the repository, including twenty parallel overlapping writes where exactly one wins.
+- **Integration tests:** the real HTTP pipeline through `WebApplicationFactory`: every operation with its `400`, `404`, `409` and `412` cases, the OpenAPI document and the seed data.
+
+## What I would do next
+
+1. **Persistent storage:** SQL Server via EF Core (see [decision 4](docs/decisions.md#4-in-memory-storage-behind-a-repository-interface)).
+2. **Revisions:** keep corrected versions of a series instead of overwriting them.
+3. **Security:** the organisation's identity provider, read and write roles, request limits.
+4. **Observability:** OpenTelemetry to Prometheus and Grafana; logs carrying the same `traceId` as the error response.
+5. **Deployment:** container image on Kubernetes through GitOps, with separate liveness and readiness checks.
+6. **Events:** publish `TimeSeriesUpdated` through an outbox, so consumers react instead of polling.
+7. **Standards:** ENTSO-E / CIM import and export, EIC codes for areas.
