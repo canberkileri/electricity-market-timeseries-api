@@ -1,0 +1,96 @@
+# Ready-made requests for the API. Works in Visual Studio, Rider and VS Code (REST Client extension).
+# Start the API first: dotnet run --project src/MarketTimeSeries.Api
+# Run the requests from top to bottom. After request 3, copy the "id" from its response into @id.
+
+@baseUrl = http://localhost:5080
+@series = {{baseUrl}}/api/v1/time-series
+@id = paste-the-id-from-request-3
+
+### 1. Health check
+GET {{baseUrl}}/health
+
+### 2. Search SE3: returns today's seed data, including the DK1 to SE3 flow (SE3 is its "to" zone)
+GET {{series}}?biddingZone=SE3
+
+### 3. Create a flow from SE3 to FI: 201 Created with Location and ETag "1"
+POST {{series}}
+Content-Type: application/json
+
+{
+  "type": "CrossBorderFlow",
+  "biddingZone": "SE3",
+  "toBiddingZone": "FI",
+  "unit": "MW",
+  "resolution": "PT15M",
+  "start": "2026-12-01T00:00:00Z",
+  "values": [820.5, 815.0, 798.2, 801.7, 760.0, -120.0, -95.5, 640.3]
+}
+
+### 4. Get it by id: 200 with calculated points and ETag "1"
+GET {{series}}/{{id}}
+
+### 5. Search with a window: only the points from 00:30 up to (not including) 01:30 are returned
+GET {{series}}?biddingZone=FI&from=2026-12-01T00:30:00Z&to=2026-12-01T01:30:00Z
+
+### 6. Create an overlapping flow on the same border: 409 Conflict
+POST {{series}}
+Content-Type: application/json
+
+{
+  "type": "CrossBorderFlow",
+  "biddingZone": "SE3",
+  "toBiddingZone": "FI",
+  "unit": "MW",
+  "resolution": "PT15M",
+  "start": "2026-12-01T01:00:00Z",
+  "values": [700.0]
+}
+
+### 7. Break two rules (start not aligned, flow without a "to" zone): 400 with an error per field
+POST {{series}}
+Content-Type: application/json
+
+{
+  "type": "CrossBorderFlow",
+  "biddingZone": "SE3",
+  "unit": "MW",
+  "resolution": "PT15M",
+  "start": "2026-12-01T00:07:00Z",
+  "values": [700.0]
+}
+
+### 8. Replace it with If-Match "1": 200 with version 2 and ETag "2"
+PUT {{series}}/{{id}}
+Content-Type: application/json
+If-Match: "1"
+
+{
+  "type": "CrossBorderFlow",
+  "biddingZone": "SE3",
+  "toBiddingZone": "FI",
+  "unit": "MW",
+  "resolution": "PT15M",
+  "start": "2026-12-01T00:00:00Z",
+  "values": [830.0, 825.5, 810.0, 805.2]
+}
+
+### 9. Send the same request again: the version is now 2, so If-Match "1" is stale: 412 Precondition Failed
+PUT {{series}}/{{id}}
+Content-Type: application/json
+If-Match: "1"
+
+{
+  "type": "CrossBorderFlow",
+  "biddingZone": "SE3",
+  "toBiddingZone": "FI",
+  "unit": "MW",
+  "resolution": "PT15M",
+  "start": "2026-12-01T00:00:00Z",
+  "values": [999.0]
+}
+
+### 10. Delete it: 204 No Content
+DELETE {{series}}/{{id}}
+
+### 11. Get it again: 404 Not Found
+GET {{series}}/{{id}}
