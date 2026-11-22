@@ -44,7 +44,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** SQLite (EF Core and migrations for little gain); SQL Server or MongoDB in Docker (more setup than the task needs).
 
-**Consequences:** data is lost on restart and only one instance can run. Moving to a database is a new repository and one DI registration; domain, use cases and API stay the same. In production I would use SQL Server: a series table, a points table keyed on `(SeriesId, Position)`, and an index on `(BiddingZone, Type, Start)` for search. MongoDB fits if series are always read whole, with one document per series per day to stay under the 16 MB document limit.
+**Consequences:** data is lost on restart and only one instance can run. Moving to a database is a new repository and one DI registration; domain, use cases and API stay the same. In production I would use SQL Server, with points keyed on the series identity plus the timestamp: an identity table with a unique constraint on `(type, biddingZone, toBiddingZone, resolution)`, and a points table keyed on `(IdentityId, Timestamp)`. That key makes overlaps impossible in the database itself, since two values for the same identity and time violate it, and it answers time-window queries straight from the index. A series table keeps the id, version and period of each series as a block of those points. MongoDB fits if series are always read whole, with one document per series per day to stay under the 16 MB document limit.
 
 ## 5. Reject overlapping series with the same identity
 
