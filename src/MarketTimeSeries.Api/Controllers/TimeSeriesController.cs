@@ -68,5 +68,13 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
         return Ok(result.Value);
     }
 
+    [HttpDelete("{id:guid}")]
+    public async Task<IActionResult> Delete(Guid id, CancellationToken cancellationToken)
+    {
+        var result = await service.DeleteAsync(id, cancellationToken);
+
+        return result.IsSuccess ? NoContent() : this.ToActionResult(result.Error);
+    }
+
     private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = ETags.Format(series.Version);
 }

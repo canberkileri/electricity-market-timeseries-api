@@ -87,6 +87,9 @@ public sealed class TimeSeriesService(ITimeSeriesRepository repository, TimeProv
         };
     }
 
+    public async Task<OperationResult<Deleted>> DeleteAsync(Guid id, CancellationToken cancellationToken) =>
+        await repository.DeleteAsync(id, cancellationToken) ? new Deleted() : NotFoundError(id);
+
     private static Error NotFoundError(Guid id) => Error.NotFound($"Time series {id} was not found.");
 
     private static Error OverlapError(TimeSeries series)
