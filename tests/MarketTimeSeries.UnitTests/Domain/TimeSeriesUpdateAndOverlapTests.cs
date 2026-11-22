@@ -101,20 +101,43 @@ public sealed class TimeSeriesUpdateAndOverlapTests
     {
         var original = Flow();
 
-        var result = original.Replace(
-            new TimeSeriesDefinition(
-                TimeSeriesType.CrossBorderFlow,
-                BiddingZone.DK1,
-                ToBiddingZone: BiddingZone.DK1,
-                MeasurementUnit.MW,
-                Resolution.PT60M,
-                _midnight,
-                [1m]),
-            now: _midnight.AddHours(1));
+        // Start is not aligned to the hourly resolution.
+        var result = original.Replace(Definition(original) with { Start = _midnight.AddMinutes(7) }, _midnight.AddHours(1));
 
         Assert.False(result.IsSuccess);
-        Assert.Equal(nameof(TimeSeries.ToBiddingZone), Assert.Single(result.Errors).Field);
+        Assert.Equal(nameof(TimeSeries.Start), Assert.Single(result.Errors).Field);
         Assert.Equal(1, original.Version);
-        Assert.Equal(BiddingZone.SE3, original.ToBiddingZone);
+        Assert.Equal(_midnight, original.Start);
     }
+
+    [Theory]
+    [InlineData(nameof(TimeSeries.Type))]
+    [InlineData(nameof(TimeSeries.BiddingZone))]
+    [InlineData(nameof(TimeSeries.ToBiddingZone))]
+    [InlineData(nameof(TimeSeries.Resolution))]
+    public void Replace_ChangedIdentityField_ReturnsErrorForThatField(string field)
+    {
+        var original = Flow();
+        var changed = field switch
+        {
+            nameof(TimeSeries.Type) => Definition(original) with { Type = TimeSeriesType.Production, ToBiddingZone = null },
+            nameof(TimeSeries.BiddingZone) => Definition(original) with { BiddingZone = BiddingZone.DK2 },
+            nameof(TimeSeries.ToBiddingZone) => Definition(original) with { ToBiddingZone = BiddingZone.NO2 },
+            _ => Definition(original) with { Resolution = Resolution.PT15M },
+        };
+
+        var result = original.Replace(changed, _midnight.AddHours(1));
+
+        Assert.False(result.IsSuccess);
+        Assert.Contains(result.Errors, error => error.Field == field && error.Message.Contains("cannot be changed", StringComparison.Ordinal));
+    }
+
+    private static TimeSeriesDefinition Definition(TimeSeries series) => new(
+        series.Type,
+        series.BiddingZone,
+        series.ToBiddingZone,
+        series.Unit,
+        series.Resolution,
+        series.Start,
+        series.Values);
 }

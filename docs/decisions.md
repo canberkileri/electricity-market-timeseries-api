@@ -54,7 +54,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** latest wins (hidden data loss); automatic merging (surprising, hard to audit).
 
-**Consequences:** the overlap check and the write must be atomic: a lock in memory, a transaction or exclusion constraint in a database. Market data is often revised, so keeping revisions is a natural next step.
+**Consequences:** the identity is fixed once a series exists: an update changes its period and values, never what it describes, so all versions of an id stay comparable. The overlap check and the write must be atomic: a lock in memory, a transaction or exclusion constraint in a database. Market data is often revised, so keeping revisions is a natural next step.
 
 ## 6. Optimistic concurrency with ETag and If-Match
 

@@ -87,13 +87,14 @@ public sealed class TimeSeries
     }
 
     /// <summary>
-    /// Replaces every field of the series (a PUT), checked by the same rules as <see cref="Create"/>.
+    /// Replaces the data of the series (a PUT), checked by the same rules as <see cref="Create"/>. The identity
+    /// (type, zones, resolution) is fixed: an id always describes the same thing, so its versions stay comparable.
     /// Returns a new instance that keeps <see cref="Id"/> and <see cref="CreatedAt"/>, with the version
     /// increased by one. This instance is never changed, so readers holding it are not affected.
     /// </summary>
     public Result<TimeSeries> Replace(TimeSeriesDefinition definition, DateTimeOffset now)
     {
-        var errors = Validate(definition);
+        List<ValidationError> errors = [.. IdentityChanges(definition), .. Validate(definition)];
         if (errors.Count > 0)
         {
             return Result<TimeSeries>.Failure(errors);
@@ -103,6 +104,32 @@ public sealed class TimeSeries
 
         return Result<TimeSeries>.Success(replacement);
     }
+
+    private IEnumerable<ValidationError> IdentityChanges(TimeSeriesDefinition definition)
+    {
+        if (definition.Type != Type)
+        {
+            yield return IdentityError(nameof(Type));
+        }
+
+        if (definition.BiddingZone != BiddingZone)
+        {
+            yield return IdentityError(nameof(BiddingZone));
+        }
+
+        if (definition.ToBiddingZone != ToBiddingZone)
+        {
+            yield return IdentityError(nameof(ToBiddingZone));
+        }
+
+        if (definition.Resolution != Resolution)
+        {
+            yield return IdentityError(nameof(Resolution));
+        }
+    }
+
+    private static ValidationError IdentityError(string field) =>
+        new(field, $"{field} cannot be changed; create a new series instead.");
 
     /// <summary>
     /// True if both series describe the same thing (type, zones and resolution) for an overlapping period.

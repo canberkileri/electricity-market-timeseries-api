@@ -106,6 +106,18 @@ public sealed class TimeSeriesUpdateTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Put_ChangedBiddingZone_Returns400()
+    {
+        var day = UniqueDay();
+        var location = await CreateAsync(Production(day, 100m));
+        var otherZone = new { type = "Production", biddingZone = "SE4", unit = "MW", resolution = "PT60M", start = Iso(day), values = new[] { 100m } };
+
+        var response = await PutAsync(location, otherZone, ifMatch: "\"1\"");
+
+        await AssertValidationProblemAsync(response, "biddingZone");
+    }
+
+    [Fact]
     public async Task Put_UnknownId_Returns404()
     {
         var response = await PutAsync(new Uri($"{BasePath}/{Guid.NewGuid()}", UriKind.Relative), Production(UniqueDay(), 1m));
