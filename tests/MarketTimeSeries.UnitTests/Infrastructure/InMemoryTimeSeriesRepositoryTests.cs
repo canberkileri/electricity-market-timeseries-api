@@ -166,6 +166,19 @@ public sealed class InMemoryTimeSeriesRepositoryTests
         Assert.Equal([noon], page.Items);
     }
 
+    [Theory]
+    [InlineData(3)]            // just past the last page
+    [InlineData(int.MaxValue)] // (page - 1) * pageSize would overflow an int
+    public async Task SearchAsync_PageBeyondLastPage_ReturnsNoItemsButTotalCount(int page)
+    {
+        await _repository.AddAsync(Series(), Ct);
+
+        var result = await _repository.SearchAsync(Criteria(page: page, pageSize: 200), Ct);
+
+        Assert.Empty(result.Items);
+        Assert.Equal(1, result.TotalCount);
+    }
+
     [Fact]
     public async Task SearchAsync_SecondPage_ReturnsRemainingItemsAndTotalCount()
     {

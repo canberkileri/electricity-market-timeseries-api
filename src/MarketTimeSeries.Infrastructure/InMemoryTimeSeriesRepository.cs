@@ -31,10 +31,12 @@ public sealed class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             .ThenBy(series => series.Id) // a stable order, so paging never skips or repeats a series
             .ToList();
 
-        var page = matches
-            .Skip((criteria.Page - 1) * criteria.PageSize)
-            .Take(criteria.PageSize)
-            .ToList();
+        // In long: (page - 1) * pageSize overflows int for very large page numbers, and a negative skip would
+        // silently return the first page instead of an empty one.
+        var skip = (long)(criteria.Page - 1) * criteria.PageSize;
+        List<TimeSeries> page = skip >= matches.Count
+            ? []
+            : [.. matches.Skip((int)skip).Take(criteria.PageSize)];
 
         return Task.FromResult(new SearchPage(page, matches.Count));
     }
