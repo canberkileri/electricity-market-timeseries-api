@@ -1,3 +1,4 @@
+using MarketTimeSeries.Api;
 using MarketTimeSeries.Api.Http;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Infrastructure;
@@ -40,6 +41,8 @@ if (app.Environment.IsDevelopment())
     // The OpenAPI document at /openapi/v1.json and an interactive UI at /scalar.
     app.MapOpenApi();
     app.MapScalarApiReference();
+
+    await SeedData.AddAsync(app.Services);
 }
 
 app.MapControllers();

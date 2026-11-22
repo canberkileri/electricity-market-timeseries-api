@@ -1,13 +1,12 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
-using Microsoft.AspNetCore.Mvc.Testing;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
 namespace MarketTimeSeries.IntegrationTests;
 
-public sealed class TimeSeriesUpdateTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class TimeSeriesUpdateTests(ApiFactory factory)
+    : IClassFixture<ApiFactory>
 {
     private readonly HttpClient _client = factory.CreateClient();
 

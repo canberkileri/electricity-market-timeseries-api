@@ -1,12 +1,11 @@
 using System.Net;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Mvc.Testing;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
 namespace MarketTimeSeries.IntegrationTests;
 
-public sealed class OpenApiDocumentTests(WebApplicationFactory<Program> factory)
-    : IClassFixture<WebApplicationFactory<Program>>
+public sealed class OpenApiDocumentTests(ApiFactory factory)
+    : IClassFixture<ApiFactory>
 {
     // The document is only served in Development, so this test asks for that environment explicitly.
     private readonly HttpClient _client = factory
