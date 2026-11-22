@@ -86,6 +86,36 @@ public sealed class TimeSeries
         return Result<TimeSeries>.Success(series);
     }
 
+    /// <summary>
+    /// Replaces every field of the series (a PUT), checked by the same rules as <see cref="Create"/>.
+    /// Returns a new instance that keeps <see cref="Id"/> and <see cref="CreatedAt"/>, with the version
+    /// increased by one. This instance is never changed, so readers holding it are not affected.
+    /// </summary>
+    public Result<TimeSeries> Replace(TimeSeriesDefinition definition, DateTimeOffset now)
+    {
+        var errors = Validate(definition);
+        if (errors.Count > 0)
+        {
+            return Result<TimeSeries>.Failure(errors);
+        }
+
+        var replacement = new TimeSeries(Id, definition, Version + 1, CreatedAt, updatedAt: now);
+
+        return Result<TimeSeries>.Success(replacement);
+    }
+
+    /// <summary>
+    /// True if both series describe the same thing (type, zones and resolution) for an overlapping period.
+    /// A series never conflicts with itself, so an update can be checked against the stored version it replaces.
+    /// </summary>
+    public bool ConflictsWith(TimeSeries other) =>
+        other.Id != Id
+        && other.Type == Type
+        && other.BiddingZone == BiddingZone
+        && other.ToBiddingZone == ToBiddingZone
+        && other.Resolution == Resolution
+        && other.Period.Overlaps(Period);
+
     /// <summary>Index of the first point at or after the instant, limited to 0..Values.Count.</summary>
     private int FirstIndexAtOrAfter(DateTimeOffset instant)
     {
