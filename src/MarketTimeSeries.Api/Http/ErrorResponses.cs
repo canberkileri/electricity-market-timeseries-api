@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.Json;
 using MarketTimeSeries.Application;
 using Microsoft.AspNetCore.Mvc;
@@ -24,9 +25,15 @@ internal static class ErrorResponses
     /// Replaces the default 400 for invalid requests (missing fields, unreadable JSON), so those errors use the
     /// same field names as domain errors.
     /// </summary>
-    public static IActionResult InvalidModelState(ActionContext context) => ValidationProblem(
-        context.HttpContext,
-        context.ModelState.SelectMany(entry => entry.Value!.Errors.Select(modelError => (entry.Key, ErrorMessage(modelError)))));
+    public static IActionResult InvalidModelState(ActionContext context)
+    {
+        var acceptedFields = BodyFields(context);
+
+        return ValidationProblem(
+            context.HttpContext,
+            context.ModelState.SelectMany(entry => entry.Value!.Errors.Select(modelError =>
+                (entry.Key, ErrorMessage(ToFieldName(entry.Key), modelError, acceptedFields)))));
+    }
 
     private static BadRequestObjectResult ValidationProblem(HttpContext httpContext, IEnumerable<(string Field, string Message)> errors)
     {
@@ -46,6 +53,26 @@ internal static class ErrorResponses
     private static string ToFieldName(string key) =>
         JsonNamingPolicy.CamelCase.ConvertName(key.StartsWith("$.", StringComparison.Ordinal) ? key[2..] : key);
 
-    private static string ErrorMessage(ModelError error) =>
-        string.IsNullOrEmpty(error.ErrorMessage) ? "The value is not valid." : error.ErrorMessage;
+    // The JSON reader's own messages name .NET types, so they are hidden; this says what went wrong instead.
+    private static string ErrorMessage(string field, ModelError error, IReadOnlyList<string> acceptedFields)
+    {
+        if (!string.IsNullOrEmpty(error.ErrorMessage))
+        {
+            return error.ErrorMessage;
+        }
+
+        var rootField = field.Split('.', '[')[0]; // "values[2]" belongs to "values"
+        return acceptedFields.Count > 0 && rootField.Length > 0 && !acceptedFields.Contains(rootField)
+            ? $"Unknown field. A request accepts {string.Join(", ", acceptedFields)}."
+            : "The value is not valid.";
+    }
+
+    // The JSON names of the request body's properties, read from the type itself so the list never goes stale.
+    private static List<string> BodyFields(ActionContext context) =>
+    [
+        .. context.ActionDescriptor.Parameters
+            .Where(parameter => parameter.BindingInfo?.BindingSource == BindingSource.Body)
+            .SelectMany(parameter => parameter.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+            .Select(property => JsonNamingPolicy.CamelCase.ConvertName(property.Name)),
+    ];
 }

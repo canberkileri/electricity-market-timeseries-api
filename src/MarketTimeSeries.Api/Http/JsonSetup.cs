@@ -14,5 +14,7 @@ internal static class JsonSetup
         // Enums travel as their names ("SE3", "PT15M"); numbers such as 5 are rejected.
         options.Converters.Add(new JsonStringEnumConverter(allowIntegerValues: false));
         options.Converters.Add(new UtcDateTimeOffsetConverter());
+        // A misspelled field such as "toBidingZone" is rejected instead of silently ignored.
+        options.UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow;
     }
 }

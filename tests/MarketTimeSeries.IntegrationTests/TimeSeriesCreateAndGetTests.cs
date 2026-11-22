@@ -93,6 +93,26 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Post_UnknownField_Returns400NamingTheField()
+    {
+        // A misspelled "toBiddingZone" must not be silently ignored.
+        var request = new
+        {
+            type = "Production",
+            biddingZone = "SE3",
+            toBidingZone = "SE4",
+            unit = "MW",
+            resolution = "PT60M",
+            start = $"{UniqueDate()}T00:00:00Z",
+            values = new[] { 1m },
+        };
+
+        var response = await _client.PostAsJsonAsync(BasePath, request, Ct);
+
+        await AssertValidationProblemAsync(response, "toBidingZone");
+    }
+
+    [Fact]
     public async Task Post_MissingRequiredFields_Returns400WithErrorPerField()
     {
         var request = new { type = "Production", biddingZone = "SE3", values = new[] { 1m } };
