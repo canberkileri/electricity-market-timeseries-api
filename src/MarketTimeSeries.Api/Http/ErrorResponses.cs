@@ -27,12 +27,12 @@ internal static class ErrorResponses
     /// </summary>
     public static IActionResult InvalidModelState(ActionContext context)
     {
-        var acceptedFields = BodyFields(context);
+        var bodyFields = BodyFields(context);
 
         return ValidationProblem(
             context.HttpContext,
             context.ModelState.SelectMany(entry => entry.Value!.Errors.Select(modelError =>
-                (entry.Key, ErrorMessage(ToFieldName(entry.Key), modelError, acceptedFields)))));
+                (entry.Key, ErrorMessage(ToFieldName(entry.Key), modelError, bodyFields)))));
     }
 
     private static BadRequestObjectResult ValidationProblem(HttpContext httpContext, IEnumerable<(string Field, string Message)> errors)
@@ -54,7 +54,7 @@ internal static class ErrorResponses
         JsonNamingPolicy.CamelCase.ConvertName(key.StartsWith("$.", StringComparison.Ordinal) ? key[2..] : key);
 
     // The JSON reader's own messages name .NET types, so they are hidden; this says what went wrong instead.
-    private static string ErrorMessage(string field, ModelError error, IReadOnlyList<string> acceptedFields)
+    private static string ErrorMessage(string field, ModelError error, IReadOnlyList<(string Name, Type Type)> bodyFields)
     {
         if (!string.IsNullOrEmpty(error.ErrorMessage))
         {
@@ -62,17 +62,43 @@ internal static class ErrorResponses
         }
 
         var rootField = field.Split('.', '[')[0]; // "values[2]" belongs to "values"
-        return acceptedFields.Count > 0 && rootField.Length > 0 && !acceptedFields.Contains(rootField)
-            ? $"Unknown field. A request accepts {string.Join(", ", acceptedFields)}."
+        if (bodyFields.Count == 0 || rootField.Length == 0)
+        {
+            return "The value is not valid.";
+        }
+
+        var match = bodyFields.FirstOrDefault(bodyField => bodyField.Name == rootField);
+        return match.Type is null
+            ? $"Unknown field. A request accepts {string.Join(", ", bodyFields.Select(bodyField => bodyField.Name))}."
+            : ExpectedValue(match.Type);
+    }
+
+    // What a field of this type expects, so a client can fix the request without reading the docs.
+    private static string ExpectedValue(Type type)
+    {
+        var valueType = Nullable.GetUnderlyingType(type) ?? type;
+
+        if (valueType.IsEnum)
+        {
+            return $"Must be one of {string.Join(", ", Enum.GetNames(valueType))}.";
+        }
+
+        if (valueType == typeof(DateTimeOffset))
+        {
+            return "Must be a UTC timestamp, for example 2026-11-27T00:00:00Z.";
+        }
+
+        return valueType == typeof(IReadOnlyList<decimal>)
+            ? "Must be a list of numbers, one per period."
             : "The value is not valid.";
     }
 
-    // The JSON names of the request body's properties, read from the type itself so the list never goes stale.
-    private static List<string> BodyFields(ActionContext context) =>
+    // The JSON names and types of the request body's properties, read from the type itself so they never go stale.
+    private static List<(string Name, Type Type)> BodyFields(ActionContext context) =>
     [
         .. context.ActionDescriptor.Parameters
             .Where(parameter => parameter.BindingInfo?.BindingSource == BindingSource.Body)
             .SelectMany(parameter => parameter.ParameterType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
-            .Select(property => JsonNamingPolicy.CamelCase.ConvertName(property.Name)),
+            .Select(property => (JsonNamingPolicy.CamelCase.ConvertName(property.Name), property.PropertyType)),
     ];
 }

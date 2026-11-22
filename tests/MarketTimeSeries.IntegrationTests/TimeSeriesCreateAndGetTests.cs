@@ -89,7 +89,30 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
 
         var response = await _client.PostAsJsonAsync(BasePath, request, Ct);
 
-        await AssertValidationProblemAsync(response, "biddingZone");
+        var errors = await AssertValidationProblemAsync(response, "biddingZone");
+        var message = errors.GetProperty("biddingZone")[0].GetString();
+        Assert.StartsWith("Must be one of NO1, NO2", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Post_StartWithoutOffset_Returns400WithTimestampHint()
+    {
+        // Read without an offset, the time would depend on the server's time zone, so it is rejected everywhere.
+        var request = new
+        {
+            type = "Production",
+            biddingZone = "SE3",
+            unit = "MW",
+            resolution = "PT60M",
+            start = $"{UniqueDate()}T00:00:00",
+            values = new[] { 1m },
+        };
+
+        var response = await _client.PostAsJsonAsync(BasePath, request, Ct);
+
+        var errors = await AssertValidationProblemAsync(response, "start");
+        var message = errors.GetProperty("start")[0].GetString();
+        Assert.Contains("UTC timestamp", message, StringComparison.Ordinal);
     }
 
     [Fact]

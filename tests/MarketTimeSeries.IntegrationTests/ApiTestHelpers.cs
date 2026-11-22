@@ -22,8 +22,8 @@ internal static class ApiTestHelpers
     public static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response) =>
         await response.Content.ReadFromJsonAsync<JsonElement>(Ct);
 
-    /// <summary>Asserts a 400 Problem Details response whose <c>errors</c> name exactly these fields.</summary>
-    public static async Task AssertValidationProblemAsync(HttpResponseMessage response, params string[] expectedFields)
+    /// <summary>Asserts a 400 Problem Details response whose <c>errors</c> name exactly these fields, and returns them.</summary>
+    public static async Task<JsonElement> AssertValidationProblemAsync(HttpResponseMessage response, params string[] expectedFields)
     {
         Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
@@ -31,5 +31,6 @@ internal static class ApiTestHelpers
         Assert.Equal(
             expectedFields.Order(StringComparer.Ordinal),
             errors.EnumerateObject().Select(field => field.Name).Order(StringComparer.Ordinal));
+        return errors;
     }
 }
