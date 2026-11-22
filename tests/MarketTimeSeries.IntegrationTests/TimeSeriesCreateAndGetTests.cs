@@ -1,24 +1,16 @@
 using System.Net;
 using System.Net.Http.Json;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
 namespace MarketTimeSeries.IntegrationTests;
 
 public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> factory)
     : IClassFixture<WebApplicationFactory<Program>>
 {
-    private const string BasePath = "/api/v1/time-series";
-
-    // The tests share one running API; giving each test its own day keeps their series from overlapping.
-    private static int _nextDay;
-
     private readonly HttpClient _client = factory.CreateClient();
 
-    private static CancellationToken Ct => TestContext.Current.CancellationToken;
-
-    private static string UniqueDay() =>
-        new DateTime(2030, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(Interlocked.Increment(ref _nextDay)).ToString("yyyy-MM-dd");
+    private static string UniqueDate() => UniqueDay().ToString("yyyy-MM-dd");
 
     private static object Flow(string day, string startTime = "00:00:00") => new
     {
@@ -31,13 +23,10 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
         values = new[] { 420.5m, 415.0m, -12.5m, 401.7m },
     };
 
-    private static async Task<JsonElement> ReadJsonAsync(HttpResponseMessage response) =>
-        (await response.Content.ReadFromJsonAsync<JsonElement>(Ct));
-
     [Fact]
     public async Task Post_ValidSeries_Returns201WithLocationAndETag()
     {
-        var response = await _client.PostAsJsonAsync(BasePath, Flow(UniqueDay()), Ct);
+        var response = await _client.PostAsJsonAsync(BasePath, Flow(UniqueDate()), Ct);
 
         Assert.Equal(HttpStatusCode.Created, response.StatusCode);
         var body = await ReadJsonAsync(response);
@@ -49,7 +38,7 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
     [Fact]
     public async Task Get_CreatedSeries_ReturnsSameDataWithPoints()
     {
-        var day = UniqueDay();
+        var day = UniqueDate();
         var created = await _client.PostAsJsonAsync(BasePath, Flow(day), Ct);
 
         var response = await _client.GetAsync(created.Headers.Location, Ct);
@@ -77,7 +66,7 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
             biddingZone = "DK1",
             unit = "MW",
             resolution = "PT15M",
-            start = $"{UniqueDay()}T00:07:00Z",
+            start = $"{UniqueDate()}T00:07:00Z",
             values = new[] { 1m },
         };
 
@@ -95,7 +84,7 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
             biddingZone = "SE9",
             unit = "MW",
             resolution = "PT60M",
-            start = $"{UniqueDay()}T00:00:00Z",
+            start = $"{UniqueDate()}T00:00:00Z",
             values = new[] { 1m },
         };
 
@@ -117,7 +106,7 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
     [Fact]
     public async Task Post_OverlappingSeries_Returns409ProblemDetails()
     {
-        var day = UniqueDay();
+        var day = UniqueDate();
         await _client.PostAsJsonAsync(BasePath, Flow(day), Ct);
 
         var response = await _client.PostAsJsonAsync(BasePath, Flow(day, startTime: "00:30:00"), Ct);
@@ -137,15 +126,5 @@ public sealed class TimeSeriesCreateAndGetTests(WebApplicationFactory<Program> f
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
         var body = await ReadJsonAsync(response);
         Assert.Equal(404, body.GetProperty("status").GetInt32());
-    }
-
-    private static async Task AssertValidationProblemAsync(HttpResponseMessage response, params string[] expectedFields)
-    {
-        Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
-        Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
-        var errors = (await ReadJsonAsync(response)).GetProperty("errors");
-        Assert.Equal(
-            expectedFields.Order(StringComparer.Ordinal),
-            errors.EnumerateObject().Select(field => field.Name).Order(StringComparer.Ordinal));
     }
 }
