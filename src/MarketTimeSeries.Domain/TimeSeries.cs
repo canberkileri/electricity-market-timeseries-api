@@ -69,6 +69,16 @@ public sealed class TimeSeries
     /// <summary>The half-open interval [Start, End) the series covers.</summary>
     public TimeInterval Period => new(Start, End);
 
+    /// <summary>Every value with its timestamp: point <c>i</c> is at <c>Start + i * Resolution</c>.</summary>
+    public IEnumerable<Point> Points => PointsBetween(0, Values.Count);
+
+    /// <summary>
+    /// Only the points whose timestamp lies inside the half-open window [Start, End). The index range is
+    /// calculated directly, so clipping a year-long series to one day touches only that day's values.
+    /// </summary>
+    public IEnumerable<Point> PointsWithin(TimeInterval window) =>
+        PointsBetween(FirstIndexAtOrAfter(window.Start), FirstIndexAtOrAfter(window.End));
+
     /// <summary>
     /// Creates a new series at version 1, or returns every broken rule. <paramref name="now"/> is passed in
     /// rather than read from the clock, so the domain stays deterministic and easy to test.
@@ -104,6 +114,30 @@ public sealed class TimeSeries
             updatedAt: now);
 
         return Result<TimeSeries>.Success(series);
+    }
+
+    /// <summary>Index of the first point at or after the instant, limited to 0..Values.Count.</summary>
+    private int FirstIndexAtOrAfter(DateTimeOffset instant)
+    {
+        var ticksFromStart = (instant - Start).Ticks;
+        if (ticksFromStart <= 0)
+        {
+            return 0;
+        }
+
+        var ticksPerPeriod = Resolution.ToTimeSpan().Ticks;
+        var index = (ticksFromStart + ticksPerPeriod - 1) / ticksPerPeriod; // integer division, rounded up
+
+        return (int)Math.Min(index, Values.Count);
+    }
+
+    private IEnumerable<Point> PointsBetween(int first, int endExclusive)
+    {
+        var period = Resolution.ToTimeSpan();
+        for (var index = first; index < endExclusive; index++)
+        {
+            yield return new Point(Start + (index * period), Values[index]);
+        }
     }
 
     private static List<ValidationError> Validate(

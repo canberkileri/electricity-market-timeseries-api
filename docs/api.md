@@ -92,7 +92,7 @@ GET /api/v1/time-series?biddingZone=DK1&type=CrossBorderFlow&from=2026-11-27T00:
 Behaviour:
 
 - A series is returned if its period **overlaps** `[from, to)`.
-- The returned `points` are **clipped** to the requested window, so the client gets exactly the window it asked for.
+- The returned `points` are **clipped** to the requested window, so the client gets exactly the window it asked for: a point is included when its timestamp lies in `[from, to)`.
 
 **200 OK**
 
