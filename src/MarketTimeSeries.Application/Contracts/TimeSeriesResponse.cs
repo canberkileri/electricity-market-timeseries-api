@@ -1,3 +1,4 @@
+using System.Text.Json.Serialization;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.Application.Contracts;
@@ -12,10 +13,21 @@ public sealed record TimeSeriesResponse(
     DateTimeOffset Start,
     DateTimeOffset End,
     int Version,
-    IReadOnlyList<PointResponse> Points)
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<PointResponse>? Points)
 {
-    /// <summary>Maps a series; with a window, only the points whose timestamp lies inside it are included.</summary>
-    public static TimeSeriesResponse From(TimeSeries series, TimeInterval? window = null) => new(
+    /// <summary>The series with all its points.</summary>
+    public static TimeSeriesResponse From(TimeSeries series) => Map(series, series.Points);
+
+    /// <summary>The series with only the points whose timestamp lies inside the window.</summary>
+    public static TimeSeriesResponse From(TimeSeries series, TimeInterval window) => Map(series, series.PointsWithin(window));
+
+    /// <summary>
+    /// The series without points, for searches without a window: a year at 15-minute resolution is
+    /// 35,136 points, so a page of such series would be hundreds of megabytes.
+    /// </summary>
+    public static TimeSeriesResponse WithoutPoints(TimeSeries series) => Map(series, points: null);
+
+    private static TimeSeriesResponse Map(TimeSeries series, IEnumerable<Point>? points) => new(
         series.Id,
         series.Type,
         series.BiddingZone,
@@ -25,8 +37,7 @@ public sealed record TimeSeriesResponse(
         series.Start,
         series.End,
         series.Version,
-        [.. (window is { } clip ? series.PointsWithin(clip) : series.Points)
-            .Select(point => new PointResponse(point.Timestamp, point.Value))]);
+        points is null ? null : [.. points.Select(point => new PointResponse(point.Timestamp, point.Value))]);
 }
 
 public sealed record PointResponse(DateTimeOffset Timestamp, decimal Value);

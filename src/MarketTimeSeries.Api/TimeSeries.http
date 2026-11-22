@@ -9,7 +9,7 @@
 ### 1. Health check
 GET {{baseUrl}}/health
 
-### 2. Search SE3: returns today's seed data, including the DK1 to SE3 flow (SE3 is its "to" zone)
+### 2. Search SE3: today's seed data, including the DK1 to SE3 flow (SE3 is its "to" zone); without a window, no points
 GET {{series}}?biddingZone=SE3
 
 ### 3. Create a flow from SE3 to FI: 201 Created with Location and ETag "1"

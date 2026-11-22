@@ -39,9 +39,13 @@ public sealed class TimeSeriesService(ITimeSeriesRepository repository, TimeProv
         }
 
         var page = await repository.SearchAsync(criteria.Value, cancellationToken);
+        var window = criteria.Value.Window;
 
+        // Points only for a window (at most 31 days); without one, a page could hold years of data.
         return new PagedResponse<TimeSeriesResponse>(
-            [.. page.Items.Select(series => TimeSeriesResponse.From(series, criteria.Value.Window))],
+            [.. page.Items.Select(series => window is { } clip
+                ? TimeSeriesResponse.From(series, clip)
+                : TimeSeriesResponse.WithoutPoints(series))],
             criteria.Value.Page,
             criteria.Value.PageSize,
             page.TotalCount);

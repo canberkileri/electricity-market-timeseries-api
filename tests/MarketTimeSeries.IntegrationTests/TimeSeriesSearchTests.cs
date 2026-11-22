@@ -62,6 +62,19 @@ public sealed class TimeSeriesSearchTests(ApiFactory factory)
     }
 
     [Fact]
+    public async Task Search_WithoutWindow_ReturnsSeriesWithoutPoints()
+    {
+        var day = UniqueDay();
+        await CreateAsync("Production", "SE2", null, day, 24);
+
+        var response = await SearchAsync("biddingZone=SE2");
+
+        var item = Assert.Single((await ReadJsonAsync(response)).GetProperty("items").EnumerateArray());
+        Assert.False(item.TryGetProperty("points", out _));
+        Assert.Equal(Iso(day.AddDays(1)), item.GetProperty("end").GetString());
+    }
+
+    [Fact]
     public async Task Search_SecondPage_ReturnsRemainingItemsAndTotalCount()
     {
         var day = UniqueDay();

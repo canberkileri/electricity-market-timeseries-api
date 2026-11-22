@@ -17,7 +17,7 @@ Base path: `/api/v1/time-series`. All timestamps are UTC in ISO 8601 format and 
 | `start` | datetime (UTC) | Must be aligned to the resolution |
 | `end` | datetime (UTC) | Calculated: `start + number of values * resolution`. Response only |
 | `values` | number[] | One value per period, no gaps; 1 to 35,136 values. Production and consumption values must be zero or positive; flow values may be negative (reverse direction). Request only |
-| `points` | `{ timestamp, value }[]` | Calculated from `start`, `resolution` and `values`. Response only |
+| `points` | `{ timestamp, value }[]` | Calculated from `start`, `resolution` and `values`. Response only; left out of searches without a window |
 | `version` | integer | Increases on every update. Also returned as the `ETag` header |
 
 ---
@@ -94,6 +94,7 @@ Behaviour:
 - A series is returned if its period **overlaps** `[from, to)`. Results are ordered by `start`, then type and zones, so paging is stable.
 - Invalid parameters return **400** with an error per parameter.
 - The returned `points` are **clipped** to the requested window, so the client gets exactly the window it asked for: a point is included when its timestamp lies in `[from, to)`.
+- Without `from` and `to`, series are returned **without `points`**, because a page of year-long series would be hundreds of megabytes. Use a window, or get a series by id.
 
 **200 OK**
 
