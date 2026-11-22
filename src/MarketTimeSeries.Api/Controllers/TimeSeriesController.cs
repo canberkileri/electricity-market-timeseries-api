@@ -1,7 +1,6 @@
 using MarketTimeSeries.Api.Http;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Application.Contracts;
-using MarketTimeSeries.Domain;
 using Microsoft.AspNetCore.Mvc;
 
 namespace MarketTimeSeries.Api.Controllers;
@@ -20,7 +19,7 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
         }
 
         SetETag(result.Value);
-        return CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, TimeSeriesResponse.From(result.Value));
+        return CreatedAtAction(nameof(GetById), new { id = result.Value.Id }, result.Value);
     }
 
     [HttpGet("{id:guid}")]
@@ -33,9 +32,9 @@ public sealed class TimeSeriesController(TimeSeriesService service) : Controller
         }
 
         SetETag(result.Value);
-        return Ok(TimeSeriesResponse.From(result.Value));
+        return Ok(result.Value);
     }
 
     // A strong ETag is a quoted string; the version is all a client needs to send back in If-Match.
-    private void SetETag(TimeSeries series) => Response.Headers.ETag = $"\"{series.Version}\"";
+    private void SetETag(TimeSeriesResponse series) => Response.Headers.ETag = $"\"{series.Version}\"";
 }
