@@ -1,3 +1,4 @@
+using System.Globalization;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.UnitTests.Domain;
@@ -134,6 +135,26 @@ public sealed class TimeSeriesTests
         var result = Create(resolution: Resolution.PT15M, values: new decimal[TimeSeries.MaxValues + 1]);
 
         AssertSingleError(result, nameof(TimeSeries.Values));
+    }
+
+    [Theory]
+    [InlineData("0.0001")]
+    [InlineData("420.12345")]
+    public void Create_ValueWithMoreThanThreeDecimalPlaces_ReturnsValuesError(string value)
+    {
+        var result = Create(values: [100m, decimal.Parse(value, CultureInfo.InvariantCulture)]);
+
+        AssertSingleError(result, nameof(TimeSeries.Values));
+    }
+
+    [Theory]
+    [InlineData("420.125")]
+    [InlineData("420.1250")] // trailing zeros are still three decimal places of precision
+    public void Create_ValueWithAtMostThreeDecimalPlaces_ReturnsSuccess(string value)
+    {
+        var result = Create(values: [decimal.Parse(value, CultureInfo.InvariantCulture)]);
+
+        Assert.True(result.IsSuccess);
     }
 
     [Fact]

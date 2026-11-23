@@ -10,6 +10,9 @@ public sealed class TimeSeries
     /// <summary>One leap year at 15-minute resolution: 366 days * 96 periods.</summary>
     public const int MaxValues = 35_136;
 
+    /// <summary>A thousandth of a MW is 1 kW, finer than any market data; storage keeps exactly this many.</summary>
+    public const int MaxDecimalPlaces = 3;
+
     private TimeSeries(Guid id, TimeSeriesDefinition definition, int version, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
         Id = id;
@@ -234,6 +237,12 @@ public sealed class TimeSeries
         if (type != TimeSeriesType.CrossBorderFlow && values.Any(value => value < 0))
         {
             errors.Add(new(nameof(Values), $"{type} values must be zero or positive."));
+        }
+
+        // Rejected rather than rounded: a store must never silently change a value it was given.
+        if (values.Any(value => value != decimal.Round(value, MaxDecimalPlaces)))
+        {
+            errors.Add(new(nameof(Values), $"Values may have at most {MaxDecimalPlaces} decimal places."));
         }
 
         return errors;
