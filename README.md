@@ -55,7 +55,7 @@ A pragmatic Clean Architecture with four thin projects. Dependencies point inwar
 ```mermaid
 flowchart LR
     Api[MarketTimeSeries.Api<br/>controller, Problem Details, OpenAPI] --> Application
-    Infrastructure[MarketTimeSeries.Infrastructure<br/>in-memory repository] --> Application
+    Infrastructure[MarketTimeSeries.Infrastructure<br/>in-memory and SQL Server repositories] --> Application
     Application[MarketTimeSeries.Application<br/>use cases, contracts, repository port] --> Domain
     Domain[MarketTimeSeries.Domain<br/>time series aggregate and its rules]
 ```
@@ -69,10 +69,11 @@ Recorded in a short ADR format in [docs/decisions.md](docs/decisions.md):
 1. Clean Architecture with four thin projects, and no more.
 2. A series is a header plus `start`, `resolution` and `values`, as in ENTSO-E documents.
 3. All times in UTC; intervals are half-open `[from, to)`.
-4. In-memory storage behind a repository interface; writes are atomic.
+4. Storage behind a repository interface: in memory by default, SQL Server as an option, with the rules enforced by the schema.
 5. Overlapping series with the same identity are rejected with `409`.
 6. Optimistic concurrency with `ETag` and `If-Match`.
 7. Problem Details for every error; expected failures are results, not exceptions; no validation library.
+8. Beyond SQL Server: grow it first (bulk inserts, partitions, columnstore); move only when a load test says so.
 
 The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.md).
 
@@ -95,7 +96,7 @@ The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.m
 
 ## What I would do next
 
-1. **Persistent storage:** SQL Server via EF Core (see [decision 4](docs/decisions.md#4-in-memory-storage-behind-a-repository-interface)).
+1. **Production storage:** schema changes as EF Core migrations applied by the pipeline, bulk inserts for large imports, partitions and columnstore as history grows (see [decision 8](docs/decisions.md#8-beyond-sql-server)).
 2. **Revisions:** keep corrected versions of a series instead of overwriting them.
 3. **Security:** the organisation's identity provider, read and write roles, request limits.
 4. **Observability:** OpenTelemetry to Prometheus and Grafana; logs carrying the same `traceId` as the error response.

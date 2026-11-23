@@ -36,15 +36,15 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Consequences:** overlap and clipping are one rule: `a.Start < b.End && b.Start < a.End`. Converting to local time is a presentation concern for clients.
 
-## 4. In-memory storage behind a repository interface
+## 4. Storage: in memory by default, SQL Server as an option
 
-**Decision:** `ITimeSeriesRepository` lives in Application; `InMemoryTimeSeriesRepository` in Infrastructure uses a `ConcurrentDictionary<Guid, TimeSeries>`. Development starts with seed data.
+**Decision:** `ITimeSeriesRepository` lives in Application, with two implementations in Infrastructure chosen by `Storage:Provider`: an in-memory store (the default) and SQL Server through EF Core. The SQL Server schema has three tables: `SeriesIdentity`, unique on (type, zones, resolution); `Series`, the API resource, clustered on (identity, start); and `Point`, one row per value, keyed on (identity, timestamp).
 
-**Why:** The brief allows it, and reviewers can run and test the API with only the .NET SDK.
+**Why:** Reviewers can run and test the API with only the .NET SDK, and SQL Server shows how the rules hold in a real database. Keying points on identity and timestamp makes overlaps impossible in the database itself and answers a time window with one index range read.
 
-**Rejected:** SQLite (EF Core and migrations for little gain); SQL Server or MongoDB in Docker (more setup than the task needs).
+**Rejected:** SQLite (not what production would use); MongoDB (fits whole-series reads, with one document per series per day under the 16 MB limit, but not time-window reads across series); one row per series with the values as a blob (no range reads, and overlaps could not be enforced by a key); EF Core migrations in the repository (tables are created at startup in development; in production, migrations would be applied by the deployment pipeline, not by the application).
 
-**Consequences:** data is lost on restart and only one instance can run. Moving to a database is a new repository and one DI registration; domain, use cases and API stay the same. In production I would use SQL Server, with points keyed on the series identity plus the timestamp: an identity table with a unique constraint on `(type, biddingZone, toBiddingZone, resolution)`, and a points table keyed on `(IdentityId, Timestamp)`. That key makes overlaps impossible in the database itself, since two values for the same identity and time violate it, and it answers time-window queries straight from the index. A series table keeps the id, version and period of each series as a block of those points. MongoDB fits if series are always read whole, with one document per series per day to stay under the 16 MB document limit.
+**Consequences:** The rules live in the schema: an overlap violates the points key, a stale version matches no row in a conditional `UPDATE`, and a cheap overlap query runs first, so the expected 409 needs no exception. Two details matter: EF Core adds a `NOT NULL` filter to unique indexes on nullable columns, which would allow duplicate production identities, so the filter is removed; and SQL Server does not store version 7 GUIDs in creation order, so the GUID is a nonclustered key. One repository contract runs against both stores, with SQL Server in Testcontainers. The in-memory store loses data on restart and runs as a single instance.
 
 ## 5. Reject overlapping series with the same identity
 
@@ -54,7 +54,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** latest wins (hidden data loss); automatic merging (surprising, hard to audit).
 
-**Consequences:** the identity is fixed once a series exists: an update changes its period and values, never what it describes, so all versions of an id stay comparable. The overlap check and the write must be atomic: a lock in memory, a transaction or exclusion constraint in a database. Market data is often revised, so keeping revisions is a natural next step.
+**Consequences:** the identity is fixed once a series exists: an update changes its period and values, never what it describes, so all versions of an id stay comparable. The overlap check and the write must be atomic: a lock in memory, and in SQL Server the points key (see decision 4). Market data is often revised, so keeping revisions is a natural next step.
 
 ## 6. Optimistic concurrency with ETag and If-Match
 
@@ -64,7 +64,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** last write wins (silent lost updates); pessimistic locking (lock management and timeouts, a poor fit for stateless REST).
 
-**Consequences:** clients re-read and retry on `412`; simple clients can still update without the header. Making `If-Match` mandatory (`428 Precondition Required`) is a small change if stricter rules are preferred. In a database, `version` maps to a row version.
+**Consequences:** clients re-read and retry on `412`; simple clients can still update without the header. Making `If-Match` mandatory (`428 Precondition Required`) is a small change if stricter rules are preferred. In SQL Server, the check and the write are one conditional `UPDATE ... WHERE Version = @expected`.
 
 ## 7. Problem Details for all errors, results for business outcomes
 
@@ -75,3 +75,14 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 **Rejected:** a custom error format (clients learn something new); exceptions for every error (exceptions as normal control flow); a validation library such as FluentValidation (the same rules would be written twice, in a validator and in the domain).
 
 **Consequences:** validation has two layers and no library. ASP.NET Core model validation checks the request shape (required fields, known enum names). `TimeSeries.Create` checks the business rules and returns every broken rule at once as a `Result`; its constructor is private, so no path can create an invalid series. Exceptions are left for programming errors. Every Problem Details response includes a `traceId`, so a client error can be matched with server logs.
+
+## 8. Beyond SQL Server
+
+**Decision:** Stay on SQL Server and grow it first: bulk inserts (`SqlBulkCopy`) for large imports, monthly partitions and a columnstore index for history and aggregates. Move part of the data to another store only when a load test against agreed targets shows SQL Server cannot meet them.
+
+**Why:** Running a new database has a real cost (operations, backups, skills), and SQL Server with partitioning and columnstore covers a lot. The repository interface means a move changes Infrastructure only.
+
+**Where to go, by need:** analytics over years of history: a columnar store (ClickHouse, Azure Data Explorer) fed from SQL Server; time series as the main workload: TimescaleDB on PostgreSQL (hypertables, compression, continuous aggregates); cold archives: Parquet files in object storage (S3); whole-series documents: MongoDB time series collections.
+
+**How to move without downtime:** write to both stores through the outbox, backfill history, compare reads, switch readers one by one, then retire the old store. The API and its contract stay the same throughout.
+
