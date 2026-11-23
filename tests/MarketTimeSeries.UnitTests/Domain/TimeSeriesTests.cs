@@ -157,6 +157,36 @@ public sealed class TimeSeriesTests
         Assert.True(result.IsSuccess);
     }
 
+    [Theory]
+    [InlineData(TimeSeriesType.Production, "1000000.001")]
+    [InlineData(TimeSeriesType.CrossBorderFlow, "-1000000.001")]
+    public void Create_ValueBeyondMaxAbsoluteValue_ReturnsValuesError(TimeSeriesType type, string value)
+    {
+        var flowZones = type == TimeSeriesType.CrossBorderFlow;
+        var result = Create(
+            type: type,
+            biddingZone: flowZones ? BiddingZone.DK1 : BiddingZone.SE3,
+            toBiddingZone: flowZones ? BiddingZone.SE3 : null,
+            values: [decimal.Parse(value, CultureInfo.InvariantCulture)]);
+
+        AssertSingleError(result, nameof(TimeSeries.Values));
+    }
+
+    [Theory]
+    [InlineData(TimeSeriesType.Production, "1000000")]
+    [InlineData(TimeSeriesType.CrossBorderFlow, "-1000000")]
+    public void Create_ValueAtMaxAbsoluteValue_ReturnsSuccess(TimeSeriesType type, string value)
+    {
+        var flowZones = type == TimeSeriesType.CrossBorderFlow;
+        var result = Create(
+            type: type,
+            biddingZone: flowZones ? BiddingZone.DK1 : BiddingZone.SE3,
+            toBiddingZone: flowZones ? BiddingZone.SE3 : null,
+            values: [decimal.Parse(value, CultureInfo.InvariantCulture)]);
+
+        Assert.True(result.IsSuccess);
+    }
+
     [Fact]
     public void Create_SeveralBrokenRules_ReturnsEveryError()
     {

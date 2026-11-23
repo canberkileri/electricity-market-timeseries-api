@@ -13,6 +13,12 @@ public sealed class TimeSeries
     /// <summary>A thousandth of a MW is 1 kW, finer than any market data; storage keeps exactly this many.</summary>
     public const int MaxDecimalPlaces = 3;
 
+    /// <summary>
+    /// The largest magnitude a value may have, in MW: far above the whole Nordic system (around 100 GW), so only a
+    /// mistake can exceed it, and well inside what storage can hold, so a store never fails on a value it was given.
+    /// </summary>
+    public const decimal MaxAbsoluteValue = 1_000_000m;
+
     private TimeSeries(Guid id, TimeSeriesDefinition definition, int version, DateTimeOffset createdAt, DateTimeOffset updatedAt)
     {
         Id = id;
@@ -237,6 +243,13 @@ public sealed class TimeSeries
         if (type != TimeSeriesType.CrossBorderFlow && values.Any(value => value < 0))
         {
             errors.Add(new(nameof(Values), $"{type} values must be zero or positive."));
+        }
+
+        if (values.Any(value => Math.Abs(value) > MaxAbsoluteValue))
+        {
+            // Invariant culture: the message must read the same whatever language the server is set to.
+            errors.Add(new(nameof(Values), FormattableString.Invariant(
+                $"Values must be between -{MaxAbsoluteValue:N0} and {MaxAbsoluteValue:N0} MW.")));
         }
 
         // Rejected rather than rounded: a store must never silently change a value it was given.

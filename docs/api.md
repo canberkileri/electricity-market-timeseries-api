@@ -16,7 +16,7 @@ Base path: `/api/v1/time-series`. All timestamps are UTC in ISO 8601 format and 
 | `resolution` | string | `PT15M` or `PT60M` |
 | `start` | datetime (UTC) | Must be aligned to the resolution |
 | `end` | datetime (UTC) | Calculated: `start + number of values * resolution`. Response only |
-| `values` | number[] | One value per period, no gaps; 1 to 35,136 values, each with at most 3 decimal places (1 kW). Production and consumption values must be zero or positive; flow values may be negative (reverse direction). Request only |
+| `values` | number[] | One value per period, no gaps; 1 to 35,136 values, each with at most 3 decimal places (1 kW) and between -1,000,000 and 1,000,000. Production and consumption values must be zero or positive; flow values may be negative (reverse direction). Request only |
 | `points` | `{ timestamp, value }[]` | Calculated from `start`, `resolution` and `values`. Response only; left out of searches without a window |
 
 A request body may contain only the request fields. An unknown field, such as a typo or a response-only field like `id`, returns **400** naming the field, so send only the request fields when updating a series you have read.
