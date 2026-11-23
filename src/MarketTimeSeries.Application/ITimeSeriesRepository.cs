@@ -11,7 +11,10 @@ public interface ITimeSeriesRepository
 {
     Task<TimeSeries?> GetAsync(Guid id, CancellationToken cancellationToken);
 
-    /// <summary>Series matching every given filter, ordered by start, type and zones, and paged.</summary>
+    /// <summary>
+    /// Series matching every given filter, ordered by start, type and zones, and paged. Each result carries only the
+    /// points inside the window, and none when there is no window.
+    /// </summary>
     Task<SearchPage> SearchAsync(SearchCriteria criteria, CancellationToken cancellationToken);
 
     /// <summary>Adds the series unless it conflicts with a stored one: <see cref="WriteOutcome.Done"/> or <see cref="WriteOutcome.Conflict"/>.</summary>

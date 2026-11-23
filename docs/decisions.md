@@ -14,7 +14,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** one project with folders (boundaries are only conventions); CQRS with MediatR and AutoMapper (too much indirection for five endpoints, and both now need commercial licences).
 
-**Consequences:** mapping between DTOs and domain objects is written by hand: a little more code, but explicit. No generic repository and no extra layers.
+**Consequences:** mapping between DTOs and domain objects is written by hand: a little more code, but explicit. No generic repository and no extra layers. Writes go through the `TimeSeries` aggregate, which guards the rules; search returns a small read model with only the points inside the window, because a database answers that far more cheaply than rebuilding whole series only to clip them.
 
 ## 2. A series is a header plus start, resolution and values
 

@@ -34,9 +34,9 @@ public sealed class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         // In long: (page - 1) * pageSize overflows int for very large page numbers, and a negative skip would
         // silently return the first page instead of an empty one.
         var skip = (long)(criteria.Page - 1) * criteria.PageSize;
-        List<TimeSeries> page = skip >= matches.Count
+        List<SeriesSummary> page = skip >= matches.Count
             ? []
-            : [.. matches.Skip((int)skip).Take(criteria.PageSize)];
+            : [.. matches.Skip((int)skip).Take(criteria.PageSize).Select(series => Summarize(series, criteria.Window))];
 
         return Task.FromResult(new SearchPage(page, matches.Count));
     }
@@ -98,6 +98,18 @@ public sealed class InMemoryTimeSeriesRepository : ITimeSeriesRepository
             return Task.FromResult(WriteOutcome.Done);
         }
     }
+
+    private static SeriesSummary Summarize(TimeSeries series, TimeInterval? window) => new(
+        series.Id,
+        series.Type,
+        series.BiddingZone,
+        series.ToBiddingZone,
+        series.Unit,
+        series.Resolution,
+        series.Start,
+        series.End,
+        series.Version,
+        window is { } clip ? [.. series.PointsWithin(clip)] : null);
 
     // ConflictsWith ignores a series with the same id, so a replacement is never compared with the version it replaces.
     // Enumerates the dictionary directly: .Values would copy every series into a new list on each write. That is

@@ -162,7 +162,7 @@ public sealed class InMemoryTimeSeriesRepositoryTests
         var page = await _repository.SearchAsync(Criteria(biddingZone: BiddingZone.SE3), Ct);
 
         Assert.Equal(3, page.TotalCount);
-        Assert.DoesNotContain(no1Production, page.Items);
+        Assert.DoesNotContain(page.Items, item => item.Id == no1Production.Id);
     }
 
     [Fact]
@@ -175,7 +175,7 @@ public sealed class InMemoryTimeSeriesRepositoryTests
 
         var page = await _repository.SearchAsync(Criteria(window: new TimeInterval(_midnight.AddHours(3), _midnight.AddHours(13))), Ct);
 
-        Assert.Equal([noon], page.Items);
+        Assert.Equal([noon.Id], page.Items.Select(item => item.Id));
     }
 
     [Theory]
@@ -202,6 +202,6 @@ public sealed class InMemoryTimeSeriesRepositoryTests
         var page = await _repository.SearchAsync(Criteria(page: 2, pageSize: 3), Ct);
 
         Assert.Equal(5, page.TotalCount);
-        Assert.Equal([_midnight.AddDays(3), _midnight.AddDays(4)], page.Items.Select(series => series.Start));
+        Assert.Equal([_midnight.AddDays(3), _midnight.AddDays(4)], page.Items.Select(item => item.Start));
     }
 }
