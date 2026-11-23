@@ -8,7 +8,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 ## 1. Clean Architecture with four thin projects
 
-**Decision:** Four projects: Domain (entities, value objects, rules; no dependencies), Application (use cases, DTOs, validation, `ITimeSeriesRepository`), Infrastructure (repository implementation) and Api (controllers, error mapping, OpenAPI). Dependencies point inward only.
+**Decision:** Four projects: Domain (entities, value objects, rules; no dependencies), Application (use cases, DTOs, validation, `ITimeSeriesRepository`), Infrastructure (repository implementations) and Api (controllers, error mapping, OpenAPI). Dependencies point inward only.
 
 **Why:** The API is small, but the domain has real rules (alignment, flow direction, overlap). Separate projects let the compiler enforce that the rules never depend on ASP.NET Core or storage, and make them testable on their own.
 
@@ -22,7 +22,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Why:** This is the ENTSO-E model in a simpler form: a point's time is `start + (position - 1) * resolution`. Gaps and duplicate timestamps are impossible by design, so validation stays small.
 
-**Rejected:** a list of `{ timestamp, value }` in requests (needs checks for duplicates, order and spacing); one record per point (loses the idea of a series).
+**Rejected:** a list of `{ timestamp, value }` in requests (needs checks for duplicates, order and spacing); one record per point as the API model (loses the idea of a series; storage does keep one row per value, see decision 4).
 
 **Consequences:** missing values cannot be represented yet; nullable values would add that without changing the shape. Mapping to ENTSO-E / CIM documents later is straightforward.
 
@@ -44,7 +44,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** SQLite (not what production would use); MongoDB (fits whole-series reads, with one document per series per day under the 16 MB limit, but not time-window reads across series); one row per series with the values as a blob (no range reads, and overlaps could not be enforced by a key); EF Core migrations in the repository (tables are created at startup in development; in production, migrations would be applied by the deployment pipeline, not by the application).
 
-**Consequences:** The rules live in the schema: an overlap violates the points key, a stale version matches no row in a conditional `UPDATE`, and a cheap overlap query runs first, so the expected 409 needs no exception. Two details matter: EF Core adds a `NOT NULL` filter to unique indexes on nullable columns, which would allow duplicate production identities, so the filter is removed; and SQL Server does not store version 7 GUIDs in creation order, so the GUID is a nonclustered key. One repository contract runs against both stores, with SQL Server in Testcontainers. The in-memory store loses data on restart and runs as a single instance.
+**Consequences:** The rules live in the schema: an overlap violates the points key, a stale version matches no row in a conditional `UPDATE`, and a cheap overlap query runs first, so the expected 409 needs no exception. Two details matter: EF Core adds a `WHERE ... IS NOT NULL` filter to unique indexes on nullable columns, which would allow duplicate production identities, so the filter is removed; and SQL Server does not store version 7 GUIDs in creation order, so the GUID is a nonclustered key. One repository contract runs against both stores, with SQL Server in Testcontainers. The in-memory store loses data on restart and runs as a single instance.
 
 ## 5. Reject overlapping series with the same identity
 

@@ -18,9 +18,9 @@ Base path: `/api/v1/time-series`. All timestamps are UTC in ISO 8601 format and 
 | `end` | datetime (UTC) | Calculated: `start + number of values * resolution`. Response only |
 | `values` | number[] | One value per period, no gaps; 1 to 35,136 values, each with at most 3 decimal places (1 kW) and between -1,000,000 and 1,000,000. Production and consumption values must be zero or positive; flow values may be negative (reverse direction). Request only |
 | `points` | `{ timestamp, value }[]` | Calculated from `start`, `resolution` and `values`. Response only; left out of searches without a window |
+| `version` | integer | Increases on every update. Also returned as the `ETag` header |
 
 A request body may contain only the request fields. An unknown field, such as a typo or a response-only field like `id`, returns **400** naming the field, so send only the request fields when updating a series you have read.
-| `version` | integer | Increases on every update. Also returned as the `ETag` header |
 
 ---
 
@@ -35,7 +35,7 @@ Content-Type: application/json
   "biddingZone": "SE3",
   "unit": "MW",
   "resolution": "PT60M",
-  "start": "2026-11-27T00:00:00Z",
+  "start": "2026-12-01T00:00:00Z",
   "values": [10234.0, 10120.5, 9987.2]
 }
 ```
@@ -55,13 +55,13 @@ ETag: "1"
   "toBiddingZone": null,
   "unit": "MW",
   "resolution": "PT60M",
-  "start": "2026-11-27T00:00:00Z",
-  "end": "2026-11-27T03:00:00Z",
+  "start": "2026-12-01T00:00:00Z",
+  "end": "2026-12-01T03:00:00Z",
   "version": 1,
   "points": [
-    { "timestamp": "2026-11-27T00:00:00Z", "value": 10234.0 },
-    { "timestamp": "2026-11-27T01:00:00Z", "value": 10120.5 },
-    { "timestamp": "2026-11-27T02:00:00Z", "value": 9987.2 }
+    { "timestamp": "2026-12-01T00:00:00Z", "value": 10234.0 },
+    { "timestamp": "2026-12-01T01:00:00Z", "value": 10120.5 },
+    { "timestamp": "2026-12-01T02:00:00Z", "value": 9987.2 }
   ]
 }
 ```
