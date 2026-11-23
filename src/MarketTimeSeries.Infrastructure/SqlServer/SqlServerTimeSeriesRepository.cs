@@ -8,7 +8,9 @@ namespace MarketTimeSeries.Infrastructure.SqlServer;
 /// <summary>
 /// Stores series in SQL Server. The rules that need other rows are enforced by the schema, not by locks:
 /// an overlapping series violates the (identity, timestamp) key of its points, and a stale version matches
-/// no row in a conditional UPDATE. Each call uses its own DbContext, so one instance serves parallel requests.
+/// no row in a conditional UPDATE. A cheap overlap query runs first, so the normal 409 needs no exception;
+/// the key stays as the safety net when two requests race past that query. Each call uses its own DbContext,
+/// so one instance serves parallel requests.
 /// </summary>
 internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeriesDbContext> contextFactory)
     : ITimeSeriesRepository
@@ -80,6 +82,10 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
     {
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
         var identityId = await GetOrCreateIdentityIdAsync(context, series, cancellationToken);
+        if (await OverlapsAsync(context, identityId, series, cancellationToken))
+        {
+            return WriteOutcome.Conflict;
+        }
 
         context.Series.Add(ToRecord(series, identityId));
         try
@@ -90,6 +96,7 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
         }
         catch (DbUpdateException exception) when (IsDuplicateKey(exception))
         {
+            // Another request stored an overlapping series between our check and our insert.
             return WriteOutcome.Conflict;
         }
     }
@@ -106,6 +113,11 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
         if (stored is null)
         {
             return WriteOutcome.NotFound;
+        }
+
+        if (await OverlapsAsync(context, stored.IdentityId, replacement, cancellationToken))
+        {
+            return WriteOutcome.Conflict;
         }
 
         try
@@ -159,6 +171,20 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
         return await context.Series.AnyAsync(series => series.Id == id, cancellationToken)
             ? WriteOutcome.VersionMismatch
             : WriteOutcome.NotFound;
+    }
+
+    // Another series with the same identity whose period overlaps: a seek on the clustered (IdentityId, Start) index.
+    private static Task<bool> OverlapsAsync(
+        TimeSeriesDbContext context,
+        int identityId,
+        TimeSeries series,
+        CancellationToken cancellationToken)
+    {
+        var (start, end) = (series.Start.UtcDateTime, series.End.UtcDateTime);
+
+        return context.Series.AnyAsync(
+            stored => stored.IdentityId == identityId && stored.Id != series.Id && stored.Start < end && stored.End > start,
+            cancellationToken);
     }
 
     // Reads only the window's points of the page's series. Filtering on IdentityId as well lets SQL Server seek
