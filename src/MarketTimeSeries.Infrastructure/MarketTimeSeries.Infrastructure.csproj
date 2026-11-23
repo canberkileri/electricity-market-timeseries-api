@@ -1,7 +1,13 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The unit tests check the schema produced by the internal DbContext. -->
+    <InternalsVisibleTo Include="MarketTimeSeries.UnitTests" />
   </ItemGroup>
 
   <ItemGroup>
