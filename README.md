@@ -25,6 +25,17 @@ Then open:
 
 In Development the API starts with three sample series for the current UTC day (SE3 production, DK1 consumption, a DK1 to SE3 flow). Data is kept in memory and lost on restart.
 
+### Run with SQL Server (optional)
+
+Needs Docker (Docker Desktop, Rancher Desktop, Colima or Podman).
+
+```bash
+docker compose up -d                                                      # SQL Server 2025, Developer edition
+dotnet run --project src/MarketTimeSeries.Api --launch-profile sqlserver  # same API, stored in SQL Server
+```
+
+The API creates the tables on first start and adds the same sample series. Data survives restarts in a Docker volume; `docker compose down -v` removes it. On Apple Silicon, turn on Rosetta emulation in Docker Desktop, since the SQL Server image is built for Intel. `dotnet test` runs the SQL Server tests whenever Docker is available and skips them otherwise.
+
 ## API overview
 
 | Operation | Request | Success | Errors |

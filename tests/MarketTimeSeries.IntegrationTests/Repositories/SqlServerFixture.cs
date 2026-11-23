@@ -13,10 +13,15 @@ namespace MarketTimeSeries.IntegrationTests.Repositories;
 /// </summary>
 public sealed class SqlServerFixture : IAsyncLifetime
 {
+    /// <summary>The test collection that shares one SQL Server container, so it starts only once per test run.</summary>
+    public const string Collection = "SqlServer";
+
     private MsSqlContainer? _container;
 
     /// <summary>Why the tests cannot run, or null when SQL Server is available.</summary>
     public string? SkipReason { get; private set; }
+
+    public string ConnectionString { get; private set; } = "";
 
     internal IDbContextFactory<TimeSeriesDbContext> ContextFactory { get; private set; } = null!;
 
@@ -33,7 +38,8 @@ public sealed class SqlServerFixture : IAsyncLifetime
             return;
         }
 
-        var options = new DbContextOptionsBuilder<TimeSeriesDbContext>().UseSqlServer(_container.GetConnectionString()).Options;
+        ConnectionString = _container.GetConnectionString();
+        var options = new DbContextOptionsBuilder<TimeSeriesDbContext>().UseSqlServer(ConnectionString).Options;
         ContextFactory = new PooledDbContextFactory<TimeSeriesDbContext>(options);
 
         await using var context = await ContextFactory.CreateDbContextAsync();
@@ -57,3 +63,6 @@ public sealed class SqlServerFixture : IAsyncLifetime
         }
     }
 }
+
+[CollectionDefinition(SqlServerFixture.Collection)]
+public sealed class SqlServerCollection : ICollectionFixture<SqlServerFixture>;

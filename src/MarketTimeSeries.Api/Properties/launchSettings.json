@@ -8,6 +8,16 @@
       "environmentVariables": {
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
+    },
+    "sqlserver": {
+      "commandName": "Project",
+      "launchBrowser": false,
+      "applicationUrl": "http://localhost:5080",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "Storage__Provider": "SqlServer",
+        "ConnectionStrings__TimeSeries": "Server=localhost,1433;Database=MarketTimeSeries;User Id=sa;Password=LocalDev_Passw0rd!;TrustServerCertificate=True"
+      }
     }
   }
 }

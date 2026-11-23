@@ -1,0 +1,21 @@
+# SQL Server for running the API with Storage:Provider=SqlServer (launch profile "sqlserver").
+# Local development only: the password below is not a secret, just a value both sides agree on.
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2025-latest
+    platform: linux/amd64 # Intel image; Apple Silicon runs it through Rosetta in Docker Desktop
+    environment:
+      ACCEPT_EULA: "Y" # SQL Server Developer edition: free for development and testing, not for production
+      MSSQL_SA_PASSWORD: "LocalDev_Passw0rd!"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql # keeps the data between restarts
+    healthcheck:
+      test: ["CMD-SHELL", "/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P \"$$MSSQL_SA_PASSWORD\" -Q 'SELECT 1' || exit 1"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+volumes:
+  sqlserver-data:

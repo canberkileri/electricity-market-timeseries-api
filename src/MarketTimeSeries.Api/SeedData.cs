@@ -21,7 +21,15 @@ internal static class SeedData
         foreach (var definition in Definitions(today))
         {
             var result = await service.CreateAsync(definition, cancellationToken);
-            if (!result.IsSuccess)
+            if (result is { IsSuccess: false, Error.Type: ErrorType.Conflict })
+            {
+                // A persistent store (SQL Server) still holds today's seed from an earlier start: nothing to do.
+                logger.LogInformation(
+                    "Seed series {Type} for {BiddingZone} is already present.",
+                    definition.Type,
+                    definition.BiddingZone);
+            }
+            else if (!result.IsSuccess)
             {
                 logger.LogWarning(
                     "Seed series {Type} for {BiddingZone} was not created: {Reason}",

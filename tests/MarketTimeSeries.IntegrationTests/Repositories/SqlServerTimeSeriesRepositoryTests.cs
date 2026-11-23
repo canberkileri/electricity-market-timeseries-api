@@ -3,8 +3,8 @@ using MarketTimeSeries.Infrastructure.SqlServer;
 
 namespace MarketTimeSeries.IntegrationTests.Repositories;
 
-public sealed class SqlServerTimeSeriesRepositoryTests(SqlServerFixture sqlServer)
-    : TimeSeriesRepositoryContract, IClassFixture<SqlServerFixture>
+[Collection(SqlServerFixture.Collection)]
+public sealed class SqlServerTimeSeriesRepositoryTests(SqlServerFixture sqlServer) : TimeSeriesRepositoryContract
 {
     protected override async ValueTask<ITimeSeriesRepository> CreateEmptyRepositoryAsync()
     {

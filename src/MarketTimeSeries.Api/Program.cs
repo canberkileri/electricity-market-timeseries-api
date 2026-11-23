@@ -26,7 +26,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TimeSeriesService>();
-builder.Services.AddInfrastructure();
+builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
@@ -42,6 +42,7 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 
+    await app.Services.EnsureStorageCreatedAsync();
     await SeedData.AddAsync(app.Services);
 }
 
