@@ -80,10 +80,34 @@ public sealed class TimeSeries
             return Result<TimeSeries>.Failure(errors);
         }
 
-        // Version 7 GUIDs are ordered by creation time, which keeps database indexes compact later.
+        // Version 7 GUIDs start with their creation time, so they sort by age where GUIDs sort byte by byte
+        // (PostgreSQL). SQL Server sorts uniqueidentifier by its last bytes first, so there the GUID is not the
+        // clustered key.
         var series = new TimeSeries(Guid.CreateVersion7(now), definition, version: 1, createdAt: now, updatedAt: now);
 
         return Result<TimeSeries>.Success(series);
+    }
+
+    /// <summary>
+    /// Rebuilds a stored series, keeping its id, version and timestamps. The rules are checked again, so even
+    /// storage cannot produce an invalid series: data that breaks them means corrupt storage, a bug, not a
+    /// client error.
+    /// </summary>
+    public static TimeSeries Restore(
+        Guid id,
+        TimeSeriesDefinition definition,
+        int version,
+        DateTimeOffset createdAt,
+        DateTimeOffset updatedAt)
+    {
+        var errors = Validate(definition);
+        if (errors.Count > 0 || version < 1)
+        {
+            throw new InvalidOperationException(
+                $"Stored time series {id} is invalid: {string.Join(" ", errors.Select(error => error.Message))}");
+        }
+
+        return new TimeSeries(id, definition, version, createdAt, updatedAt);
     }
 
     /// <summary>
