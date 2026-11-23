@@ -79,8 +79,8 @@ The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.m
 
 `dotnet test` runs both suites, and GitHub Actions runs them on every push and pull request to `main`.
 
-- **Unit tests:** domain rules (alignment, flow direction, value rules, overlap, clipping, versioning) and the repository, including twenty parallel overlapping writes where exactly one wins.
-- **Integration tests:** the real HTTP pipeline through `WebApplicationFactory`: every operation with its `400`, `404`, `409` and `412` cases, the OpenAPI document and the seed data.
+- **Unit tests:** domain rules (alignment, flow direction, value rules, overlap, clipping, versioning), search parameter rules and the SQL Server schema.
+- **Integration tests:** the real HTTP pipeline through `WebApplicationFactory`: every operation with its `400`, `404`, `409` and `412` cases, the OpenAPI document and the seed data. One repository contract runs against both stores, including twenty parallel overlapping writes where exactly one wins: the in-memory store, and SQL Server in a container via Testcontainers. Without Docker the SQL Server tests are skipped; in CI they always run.
 
 ## What I would do next
 

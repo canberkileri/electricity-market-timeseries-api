@@ -6,8 +6,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The unit tests check the schema produced by the internal DbContext. -->
+    <!-- Tests use the internal SQL Server types: the schema (unit tests) and the repository (integration tests). -->
     <InternalsVisibleTo Include="MarketTimeSeries.UnitTests" />
+    <InternalsVisibleTo Include="MarketTimeSeries.IntegrationTests" />
   </ItemGroup>
 
   <ItemGroup>
