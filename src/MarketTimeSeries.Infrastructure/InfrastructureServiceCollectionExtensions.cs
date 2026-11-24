@@ -1,4 +1,5 @@
 using MarketTimeSeries.Application.Storage;
+using MarketTimeSeries.Infrastructure.InMemory;
 using MarketTimeSeries.Infrastructure.SqlServer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;

@@ -1,5 +1,5 @@
 using MarketTimeSeries.Application.Storage;
-using MarketTimeSeries.Infrastructure;
+using MarketTimeSeries.Infrastructure.InMemory;
 
 namespace MarketTimeSeries.IntegrationTests.Repositories;
 

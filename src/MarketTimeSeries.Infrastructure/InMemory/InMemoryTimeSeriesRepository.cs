@@ -2,7 +2,7 @@ using System.Collections.Concurrent;
 using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 
-namespace MarketTimeSeries.Infrastructure;
+namespace MarketTimeSeries.Infrastructure.InMemory;
 
 /// <summary>
 /// Keeps series in memory. Reads are lock-free; every write takes one lock, so "check, then write" is atomic.
