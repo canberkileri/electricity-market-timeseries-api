@@ -101,7 +101,7 @@ The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.m
 1. **Production storage:** schema changes as EF Core migrations applied by the pipeline, bulk inserts for large imports, partitions and columnstore as history grows (see [decision 8](docs/decisions.md#8-beyond-sql-server)).
 2. **Revisions:** keep corrected versions of a series instead of overwriting them.
 3. **Security:** the organisation's identity provider, read and write roles, request limits.
-4. **Observability:** OpenTelemetry to Prometheus and Grafana; logs carrying the same `traceId` as the error response.
+4. **Observability:** OpenTelemetry metrics and traces into Prometheus and Grafana. Logs are already JSON outside Development, and every line carries the request's trace id, the same id a client gets in an error response.
 5. **Deployment:** container image on Kubernetes through GitOps, with separate liveness and readiness checks.
 6. **Events:** publish `TimeSeriesUpdated` through an outbox, so consumers react instead of polling.
 7. **Standards:** ENTSO-E / CIM import and export, EIC codes for areas.

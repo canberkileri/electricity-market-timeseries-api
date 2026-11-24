@@ -16,6 +16,18 @@ builder.WebHost.ConfigureKestrel(kestrel =>
     kestrel.AddServerHeader = false;
 });
 
+// Outside Development, logs are JSON lines that a log collector can parse, and every line carries the request's
+// TraceId (from the logging scope), so the traceId a client gets in Problem Details leads to its log lines.
+if (!builder.Environment.IsDevelopment())
+{
+    builder.Logging.AddJsonConsole(json =>
+    {
+        json.IncludeScopes = true;
+        json.UseUtcTimestamp = true;
+        json.TimestampFormat = "yyyy-MM-dd'T'HH:mm:ss.fff'Z'";
+    });
+}
+
 builder.Services
     .AddControllers(options =>
     {
