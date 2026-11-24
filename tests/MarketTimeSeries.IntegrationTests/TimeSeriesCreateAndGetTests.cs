@@ -95,10 +95,12 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
         Assert.StartsWith("Must be one of NO1, NO2", message, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The JSON reader reports "$.values[1]"; the hint must come from the "values" field, not "Unknown field".
+    /// </summary>
     [Fact]
     public async Task Post_TextInsideValues_Returns400WithValuesHint()
     {
-        // The JSON reader reports "$.values[1]"; the hint must come from the "values" field, not "Unknown field".
         var json = $$"""{"type":"Production","biddingZone":"SE3","unit":"MW","resolution":"PT60M","start":"{{UniqueDate()}}T00:00:00Z","values":[1,"x"]}""";
 
         var response = await _client.PostAsync(BasePath, new StringContent(json, Encoding.UTF8, "application/json"), Ct);
@@ -107,10 +109,12 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
         Assert.StartsWith("Must be a list of numbers", errors.GetProperty("values[1]")[0].GetString(), StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Read without an offset, the time would depend on the server's time zone, so it is rejected everywhere.
+    /// </summary>
     [Fact]
     public async Task Post_StartWithoutOffset_Returns400WithTimestampHint()
     {
-        // Read without an offset, the time would depend on the server's time zone, so it is rejected everywhere.
         var request = new
         {
             type = "Production",
@@ -128,10 +132,10 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
         Assert.Contains("UTC timestamp", message, StringComparison.Ordinal);
     }
 
+    /// <summary>A misspelled "toBiddingZone" must not be silently ignored.</summary>
     [Fact]
     public async Task Post_UnknownField_Returns400NamingTheField()
     {
-        // A misspelled "toBiddingZone" must not be silently ignored.
         var request = new
         {
             type = "Production",

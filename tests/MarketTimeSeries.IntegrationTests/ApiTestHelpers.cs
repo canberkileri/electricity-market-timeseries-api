@@ -8,7 +8,7 @@ internal static class ApiTestHelpers
 {
     public const string BasePath = "/api/v1/time-series";
 
-    // Tests share running APIs; giving each test its own days keeps their series from overlapping.
+    /// <summary>Tests share running APIs; giving each test its own days keeps their series from overlapping.</summary>
     private static int _nextDay;
 
     public static CancellationToken Ct => TestContext.Current.CancellationToken;

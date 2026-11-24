@@ -6,7 +6,7 @@ namespace MarketTimeSeries.IntegrationTests;
 
 public sealed class SeedDataTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {
-    // Seed data is only added in Development, so this test asks for that environment explicitly.
+    /// <summary>Seed data is only added in Development, so this test asks for that environment explicitly.</summary>
     private readonly HttpClient _client = factory
         .WithWebHostBuilder(builder => builder.UseEnvironment("Development"))
         .CreateClient();

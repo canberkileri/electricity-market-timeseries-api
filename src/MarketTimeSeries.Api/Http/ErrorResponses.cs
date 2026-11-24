@@ -49,11 +49,13 @@ internal static class ErrorResponses
         return new BadRequestObjectResult(problem) { ContentTypes = { "application/problem+json" } };
     }
 
-    // "Start" (domain) and "$.start" (JSON reader) both become "start", the name the client sent.
+    /// <summary>"Start" (domain) and "$.start" (JSON reader) both become "start", the name the client sent.</summary>
     private static string ToFieldName(string key) =>
         JsonNamingPolicy.CamelCase.ConvertName(key.StartsWith("$.", StringComparison.Ordinal) ? key[2..] : key);
 
-    // The JSON reader's own messages name .NET types, so they are hidden; this says what went wrong instead.
+    /// <summary>
+    /// The JSON reader's own messages name .NET types, so they are hidden; this says what went wrong instead.
+    /// </summary>
     private static string ErrorMessage(string field, ModelError error, IReadOnlyList<(string Name, Type Type)> bodyFields)
     {
         if (!string.IsNullOrEmpty(error.ErrorMessage))
@@ -75,7 +77,7 @@ internal static class ErrorResponses
             : ExpectedValue(match.Type);
     }
 
-    // What a field of this type expects, so a client can fix the request without reading the docs.
+    /// <summary>What a field of this type expects, so a client can fix the request without reading the docs.</summary>
     private static string ExpectedValue(Type type)
     {
         var valueType = Nullable.GetUnderlyingType(type) ?? type;
@@ -95,7 +97,9 @@ internal static class ErrorResponses
             : "The value is not valid.";
     }
 
-    // The JSON names and types of the request body's properties, read from the type itself so they never go stale.
+    /// <summary>
+    /// The JSON names and types of the request body's properties, read from the type itself so they never go stale.
+    /// </summary>
     private static List<(string Name, Type Type)> BodyFields(ActionContext context) =>
     [
         .. context.ActionDescriptor.Parameters

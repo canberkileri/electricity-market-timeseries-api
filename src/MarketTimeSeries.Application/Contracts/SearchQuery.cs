@@ -47,21 +47,20 @@ public sealed record SearchQuery
             var from = ParseUtc(From, nameof(From), errors);
             var to = ParseUtc(To, nameof(To), errors);
 
-            if (from is null || to is null)
+            if (from is { } start && to is { } end)
             {
-                // Already reported by ParseUtc.
-            }
-            else if (from >= to)
-            {
-                errors.Add(new(nameof(To), "To must be after From."));
-            }
-            else if (to.Value - from.Value > MaxWindow)
-            {
-                errors.Add(new(nameof(To), $"The window from From to To can be at most {MaxWindow.TotalDays} days."));
-            }
-            else
-            {
-                window = new TimeInterval(from.Value, to.Value);
+                if (start >= end)
+                {
+                    errors.Add(new(nameof(To), "To must be after From."));
+                }
+                else if (end - start > MaxWindow)
+                {
+                    errors.Add(new(nameof(To), $"The window from From to To can be at most {MaxWindow.TotalDays} days."));
+                }
+                else
+                {
+                    window = new TimeInterval(start, end);
+                }
             }
         }
 
@@ -80,7 +79,9 @@ public sealed record SearchQuery
             : Result<SearchCriteria>.Success(new SearchCriteria(BiddingZone, Type, window, Page, PageSize));
     }
 
-    // Same rule as timestamps in request bodies: an explicit offset is required, and it must be UTC.
+    /// <summary>
+    /// Same rule as timestamps in request bodies: an explicit offset is required, and it must be UTC.
+    /// </summary>
     private static DateTimeOffset? ParseUtc(string text, string field, List<ValidationError> errors)
     {
         if (DateTime.TryParse(text, CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var parsed)

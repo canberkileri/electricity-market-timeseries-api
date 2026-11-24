@@ -23,7 +23,7 @@ public abstract class TimeSeriesRepositoryContract : IAsyncLifetime
 
     protected abstract ValueTask<ITimeSeriesRepository> CreateEmptyRepositoryAsync();
 
-    // An hourly series; production in SE3 by default, each test changes only what it is about.
+    /// <summary>An hourly series; production in SE3 by default, each test changes only what it is about.</summary>
     private static TimeSeries Series(
         TimeSeriesType type = TimeSeriesType.Production,
         BiddingZone biddingZone = BiddingZone.SE3,
@@ -72,10 +72,10 @@ public abstract class TimeSeriesRepositoryContract : IAsyncLifetime
         Assert.Null(await Repository.GetAsync(overlapping.Id, Ct));
     }
 
+    /// <summary>Twenty requests race to store the same hours; the lock lets exactly one of them win.</summary>
     [Fact]
     public async Task AddAsync_ParallelOverlappingSeries_StoresExactlyOne()
     {
-        // Twenty requests race to store the same hours; the lock lets exactly one of them win.
         var candidates = Enumerable.Range(0, 20).Select(_ => Series()).ToList();
 
         var outcomes = await Task.WhenAll(candidates.Select(series => Task.Run(() => Repository.AddAsync(series, Ct), Ct)));
@@ -244,7 +244,7 @@ public abstract class TimeSeriesRepositoryContract : IAsyncLifetime
         Assert.Null(Assert.Single(page.Items).Points);
     }
 
-    // Stores may hand back a new object; what matters is that it holds the same series.
+    /// <summary>Stores may hand back a new object; what matters is that it holds the same series.</summary>
     private static void AssertStored(TimeSeries expected, TimeSeries? actual)
     {
         Assert.NotNull(actual);

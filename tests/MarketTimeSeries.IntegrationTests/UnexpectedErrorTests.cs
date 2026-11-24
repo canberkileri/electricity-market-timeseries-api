@@ -11,7 +11,7 @@ public sealed class UnexpectedErrorTests(ApiFactory factory) : IClassFixture<Api
 {
     private const string SecretDetail = "Connection string Server=prod-db-01;Password=hunter2";
 
-    // The real API, with storage replaced by one that fails the way a broken database would.
+    /// <summary>The real API, with storage replaced by one that fails the way a broken database would.</summary>
     private readonly HttpClient _client = factory
         .WithWebHostBuilder(builder => builder.ConfigureTestServices(services =>
             services.AddSingleton<ITimeSeriesRepository, FailingRepository>()))

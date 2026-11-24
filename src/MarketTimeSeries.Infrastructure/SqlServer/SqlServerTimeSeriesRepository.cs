@@ -173,7 +173,9 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
             : WriteOutcome.NotFound;
     }
 
-    // Another series with the same identity whose period overlaps: a seek on the clustered (IdentityId, Start) index.
+    /// <summary>
+    /// Another series with the same identity whose period overlaps: a seek on the clustered (IdentityId, Start) index.
+    /// </summary>
     private static Task<bool> OverlapsAsync(
         TimeSeriesDbContext context,
         int identityId,
@@ -187,8 +189,10 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
             cancellationToken);
     }
 
-    // Reads only the window's points of the page's series. Filtering on IdentityId as well lets SQL Server seek
-    // the clustered (IdentityId, Timestamp) key instead of scanning every point of each series.
+    /// <summary>
+    /// Reads only the window's points of the page's series. Filtering on IdentityId as well lets SQL Server seek the
+    /// clustered (IdentityId, Timestamp) key instead of scanning every point of each series.
+    /// </summary>
     private static async Task<ILookup<Guid, Point>> PointsInWindowAsync(
         TimeSeriesDbContext context,
         List<SeriesRecord> page,
@@ -256,7 +260,7 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
             .Select(stored => (int?)stored.Id)
             .SingleOrDefaultAsync(cancellationToken);
 
-    // 2627: primary key or unique constraint; 2601: unique index. Both mean "this already exists".
+    /// <summary>2627: primary key or unique constraint; 2601: unique index. Both mean "this already exists".</summary>
     private static bool IsDuplicateKey(Exception exception)
     {
         for (var current = exception; current is not null; current = current.InnerException)
@@ -292,7 +296,7 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
             Value = point.Value,
         });
 
-    // Restore checks the rules again, so even a corrupt row cannot become an invalid series.
+    /// <summary>Restore checks the rules again, so even a corrupt row cannot become an invalid series.</summary>
     private static TimeSeries ToDomain(SeriesRecord record) => TimeSeries.Restore(
         record.Id,
         new TimeSeriesDefinition(
@@ -319,6 +323,6 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
         record.Version,
         points is null ? null : [.. points]);
 
-    // SQL Server returns datetime2 without a kind; every DateTime in this schema is UTC.
+    /// <summary>SQL Server returns datetime2 without a kind; every DateTime in this schema is UTC.</summary>
     private static DateTimeOffset Utc(DateTime value) => new(DateTime.SpecifyKind(value, DateTimeKind.Utc));
 }

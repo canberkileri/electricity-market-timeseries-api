@@ -30,10 +30,10 @@ public sealed class TimeSeriesRestoreTests
         Assert.Equal([100m, 110m], series.Values);
     }
 
+    /// <summary>Negative production can only come from corrupt storage: a bug, not a client error.</summary>
     [Fact]
     public void Restore_DataBreakingTheRules_ThrowsInvalidOperationException()
     {
-        // Negative production can only come from corrupt storage: a bug, not a client error.
         var corrupt = _definition with { Values = [-1m] };
 
         Assert.Throws<InvalidOperationException>(() => TimeSeries.Restore(Guid.NewGuid(), corrupt, 1, _midnight, _midnight));

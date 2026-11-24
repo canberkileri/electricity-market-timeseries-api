@@ -6,7 +6,9 @@ public sealed class TimeSeriesPointsTests
 {
     private static readonly DateTimeOffset _midnight = new(2026, 11, 27, 0, 0, 0, TimeSpan.Zero);
 
-    // Eight quarter-hours from 00:00 to 02:00; each value equals its index, so results are easy to read.
+    /// <summary>
+    /// Eight quarter-hours from 00:00 to 02:00; each value equals its index, so results are easy to read.
+    /// </summary>
     private static readonly TimeSeries _series = TimeSeries.Create(
         new TimeSeriesDefinition(
             TimeSeriesType.Production,

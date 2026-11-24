@@ -241,7 +241,6 @@ public sealed class TimeSeries
             errors.Add(new(nameof(Values), $"At most {MaxValues} values are allowed."));
         }
 
-        // Flows may be negative (reverse direction); production and consumption may not.
         if (type != TimeSeriesType.CrossBorderFlow && values.Any(value => value < 0))
         {
             errors.Add(new(nameof(Values), $"{type} values must be zero or positive."));

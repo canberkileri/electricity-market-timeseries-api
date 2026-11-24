@@ -38,7 +38,6 @@ app.UseStatusCodePages();
 
 if (app.Environment.IsDevelopment())
 {
-    // The OpenAPI document at /openapi/v1.json and an interactive UI at /scalar.
     app.MapOpenApi();
     app.MapScalarApiReference();
 

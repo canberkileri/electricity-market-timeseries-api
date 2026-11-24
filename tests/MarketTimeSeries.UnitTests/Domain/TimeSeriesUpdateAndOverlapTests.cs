@@ -6,7 +6,7 @@ public sealed class TimeSeriesUpdateAndOverlapTests
 {
     private static readonly DateTimeOffset _midnight = new(2026, 11, 27, 0, 0, 0, TimeSpan.Zero);
 
-    // A DK1 to SE3 hourly flow; each test changes only what it is about.
+    /// <summary>A DK1 to SE3 hourly flow; each test changes only what it is about.</summary>
     private static TimeSeries Flow(
         BiddingZone toBiddingZone = BiddingZone.SE3,
         Resolution resolution = Resolution.PT60M,
@@ -23,7 +23,7 @@ public sealed class TimeSeriesUpdateAndOverlapTests
                 new decimal[hours * (resolution == Resolution.PT15M ? 4 : 1)]),
             now: _midnight).Value;
 
-    // Same series, new values: what a PUT that only corrects data looks like.
+    /// <summary>Same series, new values: what a PUT that only corrects data looks like.</summary>
     private static Result<TimeSeries> ReplaceValues(TimeSeries series, decimal[] values, DateTimeOffset now) =>
         series.Replace(
             new TimeSeriesDefinition(

@@ -7,7 +7,9 @@ namespace MarketTimeSeries.IntegrationTests;
 public sealed class OpenApiDocumentTests(ApiFactory factory)
     : IClassFixture<ApiFactory>
 {
-    // The document is only served in Development, so this test asks for that environment explicitly.
+    /// <summary>
+    /// The document is only served in Development, so this test asks for that environment explicitly.
+    /// </summary>
     private readonly HttpClient _client = factory
         .WithWebHostBuilder(builder => builder.UseEnvironment("Development"))
         .CreateClient();

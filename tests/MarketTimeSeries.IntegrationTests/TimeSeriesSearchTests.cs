@@ -122,10 +122,10 @@ public sealed class TimeSeriesSearchTests(ApiFactory factory)
         await AssertValidationProblemAsync(response, "to");
     }
 
+    /// <summary>Rejected on every server, instead of being read as that server's local time.</summary>
     [Fact]
     public async Task Search_TimestampWithoutOffset_Returns400()
     {
-        // Rejected on every server, instead of being read as that server's local time.
         var response = await SearchAsync("from=2030-01-01T00:00:00&to=2030-01-02T00:00:00Z");
 
         await AssertValidationProblemAsync(response, "from");

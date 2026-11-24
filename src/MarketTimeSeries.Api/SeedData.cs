@@ -42,12 +42,10 @@ internal static class SeedData
 
     private static IEnumerable<TimeSeriesDefinition> Definitions(DateTimeOffset today)
     {
-        // Hourly hydro and nuclear production in SE3: about 9,000 MW at night, 11,500 MW in the afternoon.
         yield return new TimeSeriesDefinition(
             TimeSeriesType.Production, BiddingZone.SE3, null, MeasurementUnit.MW, Resolution.PT60M, today,
             DailyCurve(periods: 24, average: 10_250, amplitude: 1_250));
 
-        // Quarter-hourly consumption in DK1, lowest at night.
         yield return new TimeSeriesDefinition(
             TimeSeriesType.Consumption, BiddingZone.DK1, null, MeasurementUnit.MW, Resolution.PT15M, today,
             DailyCurve(periods: 96, average: 2_700, amplitude: 800));
@@ -58,7 +56,7 @@ internal static class SeedData
             DailyCurve(periods: 96, average: 100, amplitude: 450));
     }
 
-    // One smooth wave per day, lowest around 03:00 and highest around 15:00, rounded to 0.1 MW.
+    /// <summary>One smooth wave per day, lowest around 03:00 and highest around 15:00, rounded to 0.1 MW.</summary>
     private static decimal[] DailyCurve(int periods, double average, double amplitude) =>
         [.. Enumerable.Range(0, periods).Select(period =>
             Math.Round((decimal)(average + (amplitude * Math.Sin(((period / (double)periods) - 0.375) * 2 * Math.PI))), 1))];

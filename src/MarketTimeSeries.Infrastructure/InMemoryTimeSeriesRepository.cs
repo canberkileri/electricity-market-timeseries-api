@@ -111,10 +111,12 @@ public sealed class InMemoryTimeSeriesRepository : ITimeSeriesRepository
         series.Version,
         window is { } clip ? [.. series.PointsWithin(clip)] : null);
 
-    // ConflictsWith ignores a series with the same id, so a replacement is never compared with the version it replaces.
-    // Enumerates the dictionary directly: .Values would copy every series into a new list on each write. That is
-    // safe here because callers hold the write lock, so nothing can change during the scan. (Search keeps .Values:
-    // it runs without the lock and needs that copy as a consistent snapshot.)
+    /// <summary>
+    /// ConflictsWith ignores a series with the same id, so a replacement is never compared with the version it
+    /// replaces. Enumerates the dictionary directly: .Values would copy every series into a new list on each write.
+    /// That is safe here because callers hold the write lock, so nothing can change during the scan. (Search keeps
+    /// .Values: it runs without the lock and needs that copy as a consistent snapshot.)
+    /// </summary>
     private bool ConflictsWithStored(TimeSeries candidate) =>
         _series.Any(entry => candidate.ConflictsWith(entry.Value));
 }

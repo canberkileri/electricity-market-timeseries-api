@@ -7,7 +7,7 @@ public sealed class TimeSeriesTests
 {
     private static readonly DateTimeOffset _midnight = new(2026, 11, 27, 0, 0, 0, TimeSpan.Zero);
 
-    // Builds a valid SE3 production series by default; each test changes only what it is about.
+    /// <summary>Builds a valid SE3 production series by default; each test changes only what it is about.</summary>
     private static Result<TimeSeries> Create(
         TimeSeriesType type = TimeSeriesType.Production,
         BiddingZone biddingZone = BiddingZone.SE3,
