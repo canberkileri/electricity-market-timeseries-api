@@ -34,7 +34,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Rejected:** accepting any offset and converting (two representations of one instant); local market time (23 and 25 hour days); closed intervals (a boundary point belongs to two periods).
 
-**Consequences:** overlap and clipping are one rule: `a.Start < b.End && b.Start < a.End`. Converting to local time is a presentation concern for clients.
+**Consequences:** two comparisons cover every case: two periods overlap when `a.Start < b.End && b.Start < a.End`, and a point belongs to a window when `from <= timestamp < to`. Converting to local time is a presentation concern for clients.
 
 ## 4. Storage: in memory by default, SQL Server as an option
 
