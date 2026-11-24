@@ -50,7 +50,7 @@ A request sends `start`, `resolution` and one value per period; the response add
 
 ## Architecture
 
-A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage.
+A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage. The arrows are project references; the dashed one is the only exception, because `Program.cs` must register the storage at startup, while controllers and use cases see only the repository interface.
 
 ```mermaid
 flowchart LR
@@ -58,6 +58,7 @@ flowchart LR
     Infrastructure[MarketTimeSeries.Infrastructure<br/>in-memory and SQL Server repositories] --> Application
     Application[MarketTimeSeries.Application<br/>use cases, contracts, repository port] --> Domain
     Domain[MarketTimeSeries.Domain<br/>time series aggregate and its rules]
+    Api -. startup wiring only .-> Infrastructure
 ```
 
 Tests live in `tests/` (unit and integration); design notes in `docs/`.

@@ -8,7 +8,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 ## 1. Clean Architecture with four thin projects
 
-**Decision:** Four projects: Domain (entities, value objects, rules; no dependencies), Application (use cases, DTOs, validation, `ITimeSeriesRepository`), Infrastructure (repository implementations) and Api (controllers, error mapping, OpenAPI). Dependencies point inward only.
+**Decision:** Four projects: Domain (entities, value objects, rules; no dependencies), Application (use cases, DTOs, validation, `ITimeSeriesRepository`), Infrastructure (repository implementations) and Api (controllers, error mapping, OpenAPI). Dependencies point inward; the one exception is that the Api references Infrastructure to register storage in `Program.cs`, while its controllers and the use cases see only the repository interface.
 
 **Why:** The API is small, but the domain has real rules (alignment, flow direction, overlap). Separate projects let the compiler enforce that the rules never depend on ASP.NET Core or storage, and make them testable on their own.
 
