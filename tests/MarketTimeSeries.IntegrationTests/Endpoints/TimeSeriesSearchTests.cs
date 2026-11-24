@@ -2,7 +2,7 @@ using System.Net;
 using System.Net.Http.Json;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Endpoints;
 
 public sealed class TimeSeriesSearchTests(ApiFactory factory)
     : IClassFixture<ApiFactory>

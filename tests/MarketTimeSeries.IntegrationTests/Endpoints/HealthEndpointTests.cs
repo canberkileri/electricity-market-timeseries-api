@@ -1,6 +1,6 @@
 using System.Net;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Endpoints;
 
 public sealed class HealthEndpointTests(ApiFactory factory)
     : IClassFixture<ApiFactory>

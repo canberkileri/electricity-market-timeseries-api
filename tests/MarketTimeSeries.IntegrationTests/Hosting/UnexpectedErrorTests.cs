@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Hosting;
 
 public sealed class UnexpectedErrorTests(ApiFactory factory) : IClassFixture<ApiFactory>
 {

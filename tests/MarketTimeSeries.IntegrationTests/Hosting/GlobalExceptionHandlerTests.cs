@@ -2,7 +2,7 @@ using Microsoft.AspNetCore.Diagnostics;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Hosting;
 
 /// <summary>Calls the API's registered exception handler directly, for cases that are hard to provoke over HTTP.</summary>
 public sealed class GlobalExceptionHandlerTests(ApiFactory factory) : IClassFixture<ApiFactory>

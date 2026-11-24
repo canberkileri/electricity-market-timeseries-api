@@ -3,7 +3,7 @@ using System.Net.Http.Json;
 using System.Text;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Endpoints;
 
 public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
     : IClassFixture<ApiFactory>

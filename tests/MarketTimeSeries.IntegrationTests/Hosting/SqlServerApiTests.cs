@@ -4,7 +4,7 @@ using MarketTimeSeries.IntegrationTests.Repositories;
 using Microsoft.AspNetCore.Hosting;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Hosting;
 
 /// <summary>
 /// The whole API through HTTP with Storage:Provider=SqlServer: proves the provider switch and the wiring,

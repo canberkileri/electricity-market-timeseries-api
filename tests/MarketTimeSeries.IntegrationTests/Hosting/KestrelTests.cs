@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Hosting;
 
 /// <summary>
 /// Runs on real Kestrel instead of the in-memory test server, because only Kestrel enforces the body size limit and

@@ -2,7 +2,7 @@ using System.Net;
 using Microsoft.AspNetCore.Hosting;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
-namespace MarketTimeSeries.IntegrationTests;
+namespace MarketTimeSeries.IntegrationTests.Hosting;
 
 public sealed class OpenApiDocumentTests(ApiFactory factory)
     : IClassFixture<ApiFactory>
