@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 
-namespace MarketTimeSeries.Api.Http;
+namespace MarketTimeSeries.Api.Errors;
 
 /// <summary>The one place where expected failures become HTTP responses (RFC 9457 Problem Details).</summary>
 internal static class ErrorResponses

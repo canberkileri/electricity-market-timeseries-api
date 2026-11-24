@@ -1,4 +1,4 @@
-using MarketTimeSeries.Api.Http;
+using MarketTimeSeries.Api.Errors;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Application.Contracts;
 using MarketTimeSeries.Domain;

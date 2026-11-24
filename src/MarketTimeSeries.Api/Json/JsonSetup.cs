@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace MarketTimeSeries.Api.Http;
+namespace MarketTimeSeries.Api.Json;
 
 internal static class JsonSetup
 {

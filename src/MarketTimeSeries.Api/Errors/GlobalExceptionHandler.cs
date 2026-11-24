@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Diagnostics;
 
-namespace MarketTimeSeries.Api.Http;
+namespace MarketTimeSeries.Api.Errors;
 
 /// <summary>
 /// The one place where exceptions become responses (business outcomes never get here: they are results, mapped in

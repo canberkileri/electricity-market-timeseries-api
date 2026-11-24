@@ -1,5 +1,6 @@
 using MarketTimeSeries.Api;
-using MarketTimeSeries.Api.Http;
+using MarketTimeSeries.Api.Errors;
+using MarketTimeSeries.Api.Json;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Infrastructure;
 using Scalar.AspNetCore;

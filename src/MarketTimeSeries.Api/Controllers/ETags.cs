@@ -1,7 +1,7 @@
 using System.Globalization;
 using Microsoft.Net.Http.Headers;
 
-namespace MarketTimeSeries.Api.Http;
+namespace MarketTimeSeries.Api.Controllers;
 
 /// <summary>The series version travels as a strong ETag: version 3 is <c>"3"</c>.</summary>
 internal static class ETags
