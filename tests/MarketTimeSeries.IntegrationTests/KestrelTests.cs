@@ -5,13 +5,14 @@ using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 namespace MarketTimeSeries.IntegrationTests;
 
 /// <summary>
-/// Runs on real Kestrel instead of the in-memory test server, because only Kestrel enforces the body size limit.
+/// Runs on real Kestrel instead of the in-memory test server, because only Kestrel enforces the body size limit and
+/// writes the Server header.
 /// </summary>
-public sealed class RequestSizeLimitTests : IDisposable
+public sealed class KestrelTests : IDisposable
 {
     private readonly ApiFactory _factory = new();
 
-    public RequestSizeLimitTests() => _factory.UseKestrel(0); // any free port
+    public KestrelTests() => _factory.UseKestrel(0); // any free port
 
     public void Dispose() => _factory.Dispose();
 
@@ -26,5 +27,18 @@ public sealed class RequestSizeLimitTests : IDisposable
 
         Assert.Equal(HttpStatusCode.RequestEntityTooLarge, response.StatusCode);
         Assert.Equal("application/problem+json", response.Content.Headers.ContentType!.MediaType);
+        Assert.Equal(["nosniff"], response.Headers.GetValues("X-Content-Type-Options")); // error responses keep it
+    }
+
+    /// <summary>Responses neither name the server nor let browsers guess their content type.</summary>
+    [Fact]
+    public async Task GetHealth_RealServer_SendsNoServerHeaderAndNoSniff()
+    {
+        using var client = _factory.CreateClient();
+
+        using var response = await client.GetAsync("/health", Ct);
+
+        Assert.Empty(response.Headers.Server);
+        Assert.Equal(["nosniff"], response.Headers.GetValues("X-Content-Type-Options"));
     }
 }

@@ -6,9 +6,15 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// The largest valid request (35,136 values) is well under 1 MB; anything bigger is rejected before it is read,
-// so an oversized body cannot make the server parse megabytes of JSON.
-builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = 1024 * 1024);
+builder.WebHost.ConfigureKestrel(kestrel =>
+{
+    // The largest valid request (35,136 values) is well under 1 MB; anything bigger is rejected before it is read,
+    // so an oversized body cannot make the server parse megabytes of JSON.
+    kestrel.Limits.MaxRequestBodySize = 1024 * 1024;
+
+    // No "Server: Kestrel" header: naming the server only helps someone looking for its known weaknesses.
+    kestrel.AddServerHeader = false;
+});
 
 builder.Services
     .AddControllers(options =>
@@ -35,6 +41,18 @@ builder.Services.AddInfrastructure(builder.Configuration);
 builder.Services.AddHealthChecks();
 
 var app = builder.Build();
+
+// Browsers must not guess a response's type and treat JSON as something else, such as script. Set as the response
+// starts, so error responses keep it too: the exception handler clears the headers before writing its Problem Details.
+app.Use(async (context, next) =>
+{
+    context.Response.OnStarting(() =>
+    {
+        context.Response.Headers.XContentTypeOptions = "nosniff";
+        return Task.CompletedTask;
+    });
+    await next(context);
+});
 
 // Every exception goes to GlobalExceptionHandler: the right status and log level per case, never internal details.
 app.UseExceptionHandler();

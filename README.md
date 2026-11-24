@@ -87,7 +87,7 @@ The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.m
 - **Values:** 1 to 35,136 per series (a leap year of quarter-hours), no gaps, at most 3 decimal places and at most 1,000,000 MW in size; production and consumption are zero or positive.
 - **Search:** `from` and `to` together, at most 31 days; returned points are clipped to the window, and a search without a window returns series without points; pages of 50 by default, 200 at most.
 - **Updates:** `PUT` replaces the period and values; the identity (type, zones, resolution) is fixed.
-- **Security:** request bodies are limited to 1 MB (`413`), and errors never reveal internal details. No authentication, since this is an assignment.
+- **Security:** request bodies are limited to 1 MB (`413`), responses do not name the server and send `X-Content-Type-Options: nosniff`, and errors never reveal internal details. No authentication, since this is an assignment.
 
 ## Testing
 
