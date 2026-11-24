@@ -74,7 +74,7 @@ internal sealed class SqlServerTimeSeriesRepository(IDbContextFactory<TimeSeries
             : null;
 
         return new SearchPage(
-            [.. page.Select(series => ToSummary(series, points is null ? null : points[series.Id]))],
+            [.. page.Select(series => ToSummary(series, points?[series.Id]))],
             totalCount);
     }
 

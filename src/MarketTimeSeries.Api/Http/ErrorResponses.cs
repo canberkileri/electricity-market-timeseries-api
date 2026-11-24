@@ -61,7 +61,9 @@ internal static class ErrorResponses
             return error.ErrorMessage;
         }
 
-        var rootField = field.Split('.', '[')[0]; // "values[2]" belongs to "values"
+        // "values[2]" belongs to "values": the field name is everything before the first "." or "[".
+        var end = field.IndexOfAny(['.', '[']);
+        var rootField = end < 0 ? field : field[..end];
         if (bodyFields.Count == 0 || rootField.Length == 0)
         {
             return "The value is not valid.";

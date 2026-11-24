@@ -1,5 +1,6 @@
 using System.Net;
 using System.Net.Http.Json;
+using System.Text;
 using static MarketTimeSeries.IntegrationTests.ApiTestHelpers;
 
 namespace MarketTimeSeries.IntegrationTests;
@@ -92,6 +93,18 @@ public sealed class TimeSeriesCreateAndGetTests(ApiFactory factory)
         var errors = await AssertValidationProblemAsync(response, "biddingZone");
         var message = errors.GetProperty("biddingZone")[0].GetString();
         Assert.StartsWith("Must be one of NO1, NO2", message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task Post_TextInsideValues_Returns400WithValuesHint()
+    {
+        // The JSON reader reports "$.values[1]"; the hint must come from the "values" field, not "Unknown field".
+        var json = $$"""{"type":"Production","biddingZone":"SE3","unit":"MW","resolution":"PT60M","start":"{{UniqueDate()}}T00:00:00Z","values":[1,"x"]}""";
+
+        var response = await _client.PostAsync(BasePath, new StringContent(json, Encoding.UTF8, "application/json"), Ct);
+
+        var errors = await AssertValidationProblemAsync(response, "values[1]");
+        Assert.StartsWith("Must be a list of numbers", errors.GetProperty("values[1]")[0].GetString(), StringComparison.Ordinal);
     }
 
     [Fact]

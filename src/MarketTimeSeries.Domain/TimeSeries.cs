@@ -1,3 +1,5 @@
+using System.Globalization;
+
 namespace MarketTimeSeries.Domain;
 
 /// <summary>
@@ -248,7 +250,8 @@ public sealed class TimeSeries
         if (values.Any(value => Math.Abs(value) > MaxAbsoluteValue))
         {
             // Invariant culture: the message must read the same whatever language the server is set to.
-            errors.Add(new(nameof(Values), FormattableString.Invariant(
+            errors.Add(new(nameof(Values), string.Create(
+                CultureInfo.InvariantCulture,
                 $"Values must be between -{MaxAbsoluteValue:N0} and {MaxAbsoluteValue:N0} MW.")));
         }
 
