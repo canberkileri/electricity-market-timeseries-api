@@ -6,6 +6,10 @@ using Scalar.AspNetCore;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// The largest valid request (35,136 values) is well under 1 MB; anything bigger is rejected before it is read,
+// so an oversized body cannot make the server parse megabytes of JSON.
+builder.WebHost.ConfigureKestrel(kestrel => kestrel.Limits.MaxRequestBodySize = 1024 * 1024);
+
 builder.Services
     .AddControllers(options =>
     {
@@ -24,6 +28,7 @@ builder.Services
 builder.Services.ConfigureHttpJsonOptions(options => JsonSetup.Configure(options.SerializerOptions));
 builder.Services.AddOpenApi();
 builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<TimeSeriesService>();
 builder.Services.AddInfrastructure(builder.Configuration);
@@ -31,7 +36,7 @@ builder.Services.AddHealthChecks();
 
 var app = builder.Build();
 
-// Unexpected exceptions become a generic 500 Problem Details response and are logged server-side.
+// Every exception goes to GlobalExceptionHandler: the right status and log level per case, never internal details.
 app.UseExceptionHandler();
 // Empty error responses, such as 404 for an unknown route, also get a Problem Details body.
 app.UseStatusCodePages();

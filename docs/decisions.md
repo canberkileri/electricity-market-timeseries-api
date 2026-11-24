@@ -68,7 +68,7 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 ## 7. Problem Details for all errors, results for business outcomes
 
-**Decision:** Every error is RFC 9457 Problem Details (`AddProblemDetails()`). Validation errors are `400` with an `errors` entry per field. Not found, conflict and version mismatch are returned by use cases as an `OperationResult` and mapped to `404`, `409` and `412` in one place in the Api layer. Unexpected exceptions go to the built-in `UseExceptionHandler()`, which returns a generic `500` Problem Details response and logs the exception server-side; a custom `IExceptionHandler` would add code without changing the response.
+**Decision:** Every error is RFC 9457 Problem Details (`AddProblemDetails()`). Validation errors are `400` with an `errors` entry per field. Not found, conflict and version mismatch are returned by use cases as an `OperationResult` and mapped to `404`, `409` and `412` in one place in the Api layer. Every exception goes to one `GlobalExceptionHandler`, run by ASP.NET Core's `UseExceptionHandler()` middleware, which gives each case its status and log level: a request the server rejects before our code runs, such as a body over the 1 MB limit, keeps its 4xx status (here `413`) and is logged as information; a request the client cancelled is logged as information and gets no response; anything else is logged as an error with the full exception and answered with a generic `500` that reveals nothing internal.
 
 **Why:** One error shape for every endpoint, possible outcomes visible in method signatures, and no stack traces leaked to clients.
 

@@ -147,6 +147,7 @@ If-Match: "2"
 | `404 Not Found` | The series does not exist |
 | `409 Conflict` | The series would overlap an existing series with the same type, zones and resolution |
 | `412 Precondition Failed` | `If-Match` does not match the current version |
+| `413 Content Too Large` | The request body is over 1 MB (the largest valid request is about 0.5 MB) |
 | `500 Internal Server Error` | Unexpected error; no internal details are exposed |
 
 **Validation error example**
