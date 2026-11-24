@@ -19,8 +19,6 @@ public readonly record struct TimeInterval
 
     public DateTimeOffset End { get; }
 
-    public bool Contains(DateTimeOffset instant) => Start <= instant && instant < End;
-
     /// <summary>Adjacent intervals, where one ends exactly when the other starts, do not overlap.</summary>
     public bool Overlaps(TimeInterval other) => Start < other.End && other.Start < End;
 }

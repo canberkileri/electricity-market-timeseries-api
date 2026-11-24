@@ -30,24 +30,6 @@ public sealed class TimeIntervalTests
     }
 
     [Theory]
-    [InlineData(0, 0)]  // the start itself
-    [InlineData(0, 59)] // just before the end
-    public void Contains_InstantFromStartUntilEnd_ReturnsTrue(int hour, int minute)
-    {
-        var interval = new TimeInterval(At(0), At(1));
-
-        Assert.True(interval.Contains(At(hour, minute)));
-    }
-
-    [Fact]
-    public void Contains_End_ReturnsFalse()
-    {
-        var interval = new TimeInterval(At(0), At(1));
-
-        Assert.False(interval.Contains(At(1)));
-    }
-
-    [Theory]
     [InlineData(1, 1)] // end equal to start
     [InlineData(2, 1)] // end before start
     public void Constructor_EndNotAfterStart_ThrowsArgumentException(int startHour, int endHour)
