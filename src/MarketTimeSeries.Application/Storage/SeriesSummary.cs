@@ -1,6 +1,6 @@
 using MarketTimeSeries.Domain;
 
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Storage;
 
 /// <summary>
 /// A search result: the header of a series plus only the points inside the search window (none without a window).

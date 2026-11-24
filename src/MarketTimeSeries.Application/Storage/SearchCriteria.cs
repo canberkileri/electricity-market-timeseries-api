@@ -1,6 +1,6 @@
 using MarketTimeSeries.Domain;
 
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Storage;
 
 /// <summary>
 /// Already validated search filters; null means "no filter". <see cref="BiddingZone"/> matches a series at

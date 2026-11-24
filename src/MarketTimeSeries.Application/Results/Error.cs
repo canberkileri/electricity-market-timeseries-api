@@ -1,6 +1,6 @@
 using MarketTimeSeries.Domain;
 
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Results;
 
 /// <summary>Why a use case failed. <see cref="ValidationErrors"/> is only filled for <see cref="ErrorType.Validation"/>.</summary>
 public sealed record Error(ErrorType Type, string Message, IReadOnlyList<ValidationError> ValidationErrors)

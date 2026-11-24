@@ -1,7 +1,7 @@
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Results;
 
 /// <summary>
-/// The outcome of a use case: a value or an <see cref="Application.Error"/>. The implicit conversions let a
+/// The outcome of a use case: a value or an <see cref="Results.Error"/>. The implicit conversions let a
 /// use case simply <c>return series;</c> or <c>return Error.NotFound(...);</c>.
 /// </summary>
 public sealed class OperationResult<T>

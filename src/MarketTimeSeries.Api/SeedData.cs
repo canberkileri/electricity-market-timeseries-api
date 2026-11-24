@@ -1,3 +1,4 @@
+using MarketTimeSeries.Application.Results;
 using MarketTimeSeries.Application;
 using MarketTimeSeries.Domain;
 

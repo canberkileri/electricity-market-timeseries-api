@@ -1,5 +1,5 @@
 using System.Collections.Concurrent;
-using MarketTimeSeries.Application;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.Infrastructure;

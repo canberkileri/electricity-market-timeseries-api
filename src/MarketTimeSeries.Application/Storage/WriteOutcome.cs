@@ -1,4 +1,4 @@
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Storage;
 
 /// <summary>Result of an atomic repository write.</summary>
 public enum WriteOutcome

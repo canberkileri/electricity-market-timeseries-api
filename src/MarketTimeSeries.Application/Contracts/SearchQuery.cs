@@ -1,4 +1,5 @@
 using System.Globalization;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.Application.Contracts;

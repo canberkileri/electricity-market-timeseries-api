@@ -1,5 +1,5 @@
-using MarketTimeSeries.Application;
 using MarketTimeSeries.Application.Contracts;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.UnitTests.Application;

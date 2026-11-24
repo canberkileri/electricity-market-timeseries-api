@@ -1,5 +1,5 @@
 using System.Net;
-using MarketTimeSeries.Application;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.DependencyInjection;

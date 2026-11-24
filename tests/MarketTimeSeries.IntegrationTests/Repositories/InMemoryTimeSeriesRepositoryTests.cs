@@ -1,4 +1,4 @@
-using MarketTimeSeries.Application;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Infrastructure;
 
 namespace MarketTimeSeries.IntegrationTests.Repositories;

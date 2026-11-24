@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 
 namespace MarketTimeSeries.Application.Contracts;

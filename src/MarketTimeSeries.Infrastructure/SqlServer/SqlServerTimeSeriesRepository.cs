@@ -1,4 +1,4 @@
-using MarketTimeSeries.Application;
+using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Domain;
 using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;

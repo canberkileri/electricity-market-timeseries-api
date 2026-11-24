@@ -1,6 +1,6 @@
 using MarketTimeSeries.Domain;
 
-namespace MarketTimeSeries.Application;
+namespace MarketTimeSeries.Application.Storage;
 
 /// <summary>
 /// Storage for time series. Writes check the business rules that need to see other series (overlap, version)

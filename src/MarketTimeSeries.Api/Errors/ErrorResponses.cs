@@ -1,9 +1,9 @@
 using System.Reflection;
 using System.Text.Json;
-using MarketTimeSeries.Application;
-using Microsoft.AspNetCore.Mvc;
+using MarketTimeSeries.Application.Results;
 using Microsoft.AspNetCore.Mvc.Infrastructure;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
+using Microsoft.AspNetCore.Mvc;
 
 namespace MarketTimeSeries.Api.Errors;
 
