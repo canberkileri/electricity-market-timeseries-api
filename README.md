@@ -17,13 +17,12 @@ dotnet run --project src/MarketTimeSeries.Api   # http://localhost:5080, stored 
 dotnet test                                     # all tests; the SQL Server ones need Docker
 ```
 
-On first start the API creates the tables and adds three sample series for the current UTC day (SE3 production, DK1 consumption, a DK1 to SE3 flow). Data survives restarts in a Docker volume; `docker compose down -v` removes it. If SQL Server is not running, the API says so in one line and stops. On Apple Silicon, turn on Rosetta emulation in Docker Desktop, since the SQL Server image is built for Intel.
+On first start the API creates the tables and adds three sample series for the current UTC day. Data survives restarts in a Docker volume (`docker compose down -v` removes it). On Apple Silicon, turn on Rosetta in Docker Desktop.
 
 Then open:
 
 - **Scalar (interactive API docs):** `http://localhost:5080/scalar`
-- **OpenAPI document:** `/openapi/v1.json`
-- **Health check:** `/health`
+- **OpenAPI document and health check:** `/openapi/v1.json` and `/health`
 - **Ready-made requests:** [`src/MarketTimeSeries.Api/TimeSeries.http`](src/MarketTimeSeries.Api/TimeSeries.http), every operation in order, including the `400`, `409` and `412` cases
 
 ### Quick run without Docker
@@ -48,7 +47,7 @@ A request sends `start`, `resolution` and one value per period; the response add
 
 ## Architecture
 
-A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage. The arrows are project references; the dashed one is the only exception, because `Program.cs` must register the storage at startup, while controllers and use cases see only the repository interface. The SQL Server tables are drawn in [decision 4](docs/decisions.md#4-storage-sql-server-with-an-in-memory-option).
+A pragmatic Clean Architecture with four thin projects; dependencies point inward, so the domain knows nothing about HTTP or storage. The dashed arrow is the one exception: `Program.cs` registers the storage, while controllers and use cases see only the repository interface. The SQL Server tables are drawn in [decision 4](docs/decisions.md#4-storage-sql-server-with-an-in-memory-option).
 
 ```mermaid
 flowchart LR
@@ -65,14 +64,14 @@ Tests live in `tests/` (unit and integration); design notes in `docs/`.
 
 Recorded in a short ADR format in [docs/decisions.md](docs/decisions.md):
 
-1. Clean Architecture with four thin projects, and no more.
-2. A series is a header plus `start`, `resolution` and `values`, as in ENTSO-E documents.
-3. All times in UTC; intervals are half-open `[from, to)`.
-4. SQL Server behind a repository interface, with the rules enforced by the schema; an in-memory store for runs without Docker.
-5. Overlapping series with the same identity are rejected with `409`.
+1. Clean Architecture, four thin projects.
+2. A series is a header plus `start`, `resolution` and `values`, as in ENTSO-E.
+3. UTC only; half-open intervals `[from, to)`.
+4. SQL Server with the rules in the schema; in memory for runs without Docker.
+5. Overlapping series with the same identity: `409`.
 6. Optimistic concurrency with `ETag` and `If-Match`.
-7. Problem Details for every error; expected failures are results, not exceptions; no validation library.
-8. Beyond SQL Server: grow it first (bulk inserts, partitions, columnstore); move only when a load test says so.
+7. Problem Details for every error; expected failures are results, not exceptions.
+8. Grow SQL Server first; move only when a load test says so.
 
 The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.md).
 
@@ -85,21 +84,21 @@ The domain research behind them is in [docs/domain-notes.md](docs/domain-notes.m
 - **Values:** 1 to 35,136 per series (a leap year of quarter-hours), no gaps, at most 3 decimal places and at most 1,000,000 MW in size; production and consumption are zero or positive.
 - **Search:** `from` and `to` together, at most 31 days; returned points are clipped to the window, and a search without a window returns series without points; pages of 50 by default, 200 at most.
 - **Updates:** `PUT` replaces the period and values; the identity (type, zones, resolution) is fixed.
-- **Security:** request bodies are limited to 1 MB (`413`), responses do not name the server and send `X-Content-Type-Options: nosniff`, and errors never reveal internal details. No authentication, since this is an assignment.
+- **Security:** 1 MB request limit (`413`), no server header, `nosniff`, no internal details in errors; no authentication, since this is an assignment.
 
 ## Testing
 
 `dotnet test` runs both suites, and GitHub Actions runs them on every push and pull request to `main`.
 
 - **Unit tests:** domain rules (alignment, flow direction, value rules, overlap, clipping, versioning), search parameter rules and the SQL Server schema.
-- **Integration tests:** the real HTTP pipeline through `WebApplicationFactory`: every operation with its `400`, `404`, `409` and `412` cases, a generic `500` that reveals no internal details, the OpenAPI document and the seed data. One repository contract runs against both stores, including twenty parallel overlapping writes where exactly one wins: the in-memory store, and SQL Server in a container via Testcontainers. Without Docker the SQL Server tests are skipped; in CI they always run.
+- **Integration tests:** the real HTTP pipeline through `WebApplicationFactory`, every operation including its error cases, and a `500` that reveals nothing internal. One repository contract runs against both stores (SQL Server via Testcontainers), including twenty parallel overlapping writes where exactly one wins. Without Docker the SQL Server tests are skipped; in CI they always run.
 
 ## What I would do next
 
-1. **Production storage:** schema changes as EF Core migrations applied by the pipeline, bulk inserts for large imports, partitions and columnstore as history grows (see [decision 8](docs/decisions.md#8-beyond-sql-server)).
+1. **Production storage:** EF Core migrations run by the pipeline; bulk inserts, partitions and columnstore as data grows ([decision 8](docs/decisions.md#8-beyond-sql-server)).
 2. **Revisions:** keep corrected versions of a series instead of overwriting them.
-3. **Security:** the organisation's identity provider, read and write roles, request limits.
-4. **Observability:** OpenTelemetry metrics and traces into Prometheus and Grafana. Logs are already JSON outside Development, and every line carries the request's trace id, the same id a client gets in an error response.
+3. **Security:** the organisation's identity provider, with read and write roles.
+4. **Observability:** OpenTelemetry metrics and traces into Prometheus and Grafana.
 5. **Deployment:** container image on Kubernetes through GitOps, with separate liveness and readiness checks.
 6. **Events:** publish `TimeSeriesUpdated` through an outbox, so consumers react instead of polling.
 7. **Standards:** ENTSO-E / CIM import and export, EIC codes for areas.
