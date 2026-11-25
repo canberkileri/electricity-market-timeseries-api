@@ -1,6 +1,7 @@
 using MarketTimeSeries.Application.Storage;
 using MarketTimeSeries.Infrastructure.InMemory;
 using MarketTimeSeries.Infrastructure.SqlServer;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,12 +11,14 @@ namespace MarketTimeSeries.Infrastructure;
 public static class InfrastructureServiceCollectionExtensions
 {
     /// <summary>
-    /// Registers storage, chosen by "Storage:Provider": InMemory (the default, needs nothing installed) or
-    /// SqlServer (needs "ConnectionStrings:TimeSeries"). Nothing outside this method knows which one is used.
+    /// Registers storage, chosen by "Storage:Provider": SqlServer (the default, needs "ConnectionStrings:TimeSeries")
+    /// or InMemory (needs nothing installed, data lost on restart). In memory must be asked for explicitly, so a server
+    /// with missing configuration fails at startup instead of silently keeping data in memory.
+    /// Nothing outside this method knows which store is used.
     /// </summary>
     public static IServiceCollection AddInfrastructure(this IServiceCollection services, IConfiguration configuration)
     {
-        var provider = configuration["Storage:Provider"] ?? "InMemory";
+        var provider = configuration["Storage:Provider"] ?? "SqlServer";
 
         if (provider.Equals("SqlServer", StringComparison.OrdinalIgnoreCase))
         {
@@ -51,6 +54,16 @@ public static class InfrastructureServiceCollectionExtensions
         }
 
         await using var context = await contextFactory.CreateDbContextAsync(cancellationToken);
-        await context.Database.EnsureCreatedAsync(cancellationToken);
+        try
+        {
+            await context.Database.EnsureCreatedAsync(cancellationToken);
+        }
+        catch (SqlException exception)
+        {
+            throw new StorageUnavailableException(
+                $"SQL Server at {context.Database.GetDbConnection().DataSource} is not available. Start it with "
+                + "\"docker compose up -d\", or run without it: dotnet run --project src/MarketTimeSeries.Api --launch-profile inmemory",
+                exception);
+        }
     }
 }

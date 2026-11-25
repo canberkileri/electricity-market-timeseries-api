@@ -77,7 +77,16 @@ if (app.Environment.IsDevelopment())
     app.MapOpenApi();
     app.MapScalarApiReference();
 
-    await app.Services.EnsureStorageCreatedAsync();
+    try
+    {
+        await app.Services.EnsureStorageCreatedAsync();
+    }
+    catch (StorageUnavailableException exception)
+    {
+        // One clear line instead of a stack trace: the store is missing, not broken code.
+        app.Logger.LogCritical("{Reason}", exception.Message);
+        return 1;
+    }
     await SeedData.AddAsync(app.Services);
 }
 
@@ -85,3 +94,4 @@ app.MapControllers();
 app.MapHealthChecks("/health");
 
 await app.RunAsync();
+return 0;

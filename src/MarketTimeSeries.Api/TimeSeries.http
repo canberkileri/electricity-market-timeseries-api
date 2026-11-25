@@ -1,5 +1,6 @@
 # Ready-made requests for the API. Works in Visual Studio, Rider and VS Code (REST Client extension).
-# Start the API first: dotnet run --project src/MarketTimeSeries.Api
+# Start the API first: docker compose up -d, then dotnet run --project src/MarketTimeSeries.Api
+# (or, without Docker: dotnet run --project src/MarketTimeSeries.Api --launch-profile inmemory)
 # Run the requests from top to bottom. After request 3, copy the "id" from its response into @id.
 
 @baseUrl = http://localhost:5080

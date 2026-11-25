@@ -36,11 +36,11 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Consequences:** two comparisons cover every case: two periods overlap when `a.Start < b.End && b.Start < a.End`, and a point belongs to a window when `from <= timestamp < to`. Converting to local time is a presentation concern for clients.
 
-## 4. Storage: in memory by default, SQL Server as an option
+## 4. Storage: SQL Server, with an in-memory option
 
-**Decision:** `ITimeSeriesRepository` lives in Application, with two implementations in Infrastructure chosen by `Storage:Provider`: an in-memory store (the default) and SQL Server through EF Core. The SQL Server schema has three tables: `SeriesIdentity`, unique on (type, zones, resolution); `Series`, the API resource, clustered on (identity, start); and `Point`, one row per value, keyed on (identity, timestamp).
+**Decision:** `ITimeSeriesRepository` lives in Application, with two implementations in Infrastructure chosen by `Storage:Provider`: SQL Server through EF Core (the default) and an in-memory store, which has to be asked for explicitly (the `inmemory` launch profile, and the tests). The SQL Server schema has three tables: `SeriesIdentity`, unique on (type, zones, resolution); `Series`, the API resource, clustered on (identity, start); and `Point`, one row per value, keyed on (identity, timestamp).
 
-**Why:** Reviewers can run and test the API with only the .NET SDK, and SQL Server shows how the rules hold in a real database. Keying points on identity and timestamp makes overlaps impossible in the database itself and answers a time window with one index range read.
+**Why:** SQL Server is where the rules hold for real, and the in-memory store still lets anyone run and test the API with only the .NET SDK. Defaulting to SQL Server means a server with missing configuration fails at startup with a clear message instead of silently keeping data in memory. Keying points on identity and timestamp makes overlaps impossible in the database itself and answers a time window with one index range read.
 
 **Rejected:** SQLite (not what production would use); MongoDB (fits whole-series reads, with one document per series per day under the 16 MB limit, but not time-window reads across series); one row per series with the values as a blob (no range reads, and overlaps could not be enforced by a key); EF Core migrations in the repository (tables are created at startup in development; in production, migrations would be applied by the deployment pipeline, not by the application).
 

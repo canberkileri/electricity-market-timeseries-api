@@ -6,15 +6,18 @@ A small REST API in C# and ASP.NET Core (.NET 10) for managing electricity marke
 
 ## Quick start
 
-**Prerequisite:** [.NET 10 SDK](https://dotnet.microsoft.com/download)
+**Prerequisites:** [.NET 10 SDK](https://dotnet.microsoft.com/download), and Docker (Docker Desktop or another Docker-compatible engine) for SQL Server. No Docker? See [Quick run without Docker](#quick-run-without-docker).
 
 ```bash
 git clone https://github.com/canberkileri/electricity-market-timeseries-api.git
 cd electricity-market-timeseries-api
 
-dotnet run --project src/MarketTimeSeries.Api   # http://localhost:5080, Development environment
-dotnet test                                     # all unit and integration tests
+docker compose up -d                            # SQL Server 2025, Developer edition
+dotnet run --project src/MarketTimeSeries.Api   # http://localhost:5080, stored in SQL Server
+dotnet test                                     # all tests; the SQL Server ones need Docker
 ```
+
+On first start the API creates the tables and adds three sample series for the current UTC day (SE3 production, DK1 consumption, a DK1 to SE3 flow). Data survives restarts in a Docker volume; `docker compose down -v` removes it. If SQL Server is not running, the API says so in one line and stops. On Apple Silicon, turn on Rosetta emulation in Docker Desktop, since the SQL Server image is built for Intel.
 
 Then open:
 
@@ -23,18 +26,13 @@ Then open:
 - **Health check:** `/health`
 - **Ready-made requests:** [`src/MarketTimeSeries.Api/TimeSeries.http`](src/MarketTimeSeries.Api/TimeSeries.http), every operation in order, including the `400`, `409` and `412` cases
 
-In Development the API starts with three sample series for the current UTC day (SE3 production, DK1 consumption, a DK1 to SE3 flow). Data is kept in memory and lost on restart.
-
-### Run with SQL Server (optional)
-
-Needs Docker: Docker Desktop, or another Docker-compatible engine.
+### Quick run without Docker
 
 ```bash
-docker compose up -d                                                      # SQL Server 2025, Developer edition
-dotnet run --project src/MarketTimeSeries.Api --launch-profile sqlserver  # same API, stored in SQL Server
+dotnet run --project src/MarketTimeSeries.Api --launch-profile inmemory   # same API, data kept in memory
 ```
 
-The API creates the tables on first start and adds the same sample series. Data survives restarts in a Docker volume; `docker compose down -v` removes it. On Apple Silicon, turn on Rosetta emulation in Docker Desktop, since the SQL Server image is built for Intel. `dotnet test` runs the SQL Server tests whenever Docker is available and skips them otherwise.
+Nothing else to install: the same API and sample series, lost on restart. `dotnet test` works without Docker too; the SQL Server tests are then skipped.
 
 ## API overview
 
@@ -70,7 +68,7 @@ Recorded in a short ADR format in [docs/decisions.md](docs/decisions.md):
 1. Clean Architecture with four thin projects, and no more.
 2. A series is a header plus `start`, `resolution` and `values`, as in ENTSO-E documents.
 3. All times in UTC; intervals are half-open `[from, to)`.
-4. Storage behind a repository interface: in memory by default, SQL Server as an option, with the rules enforced by the schema.
+4. SQL Server behind a repository interface, with the rules enforced by the schema; an in-memory store for runs without Docker.
 5. Overlapping series with the same identity are rejected with `409`.
 6. Optimistic concurrency with `ETag` and `If-Match`.
 7. Problem Details for every error; expected failures are results, not exceptions; no validation library.
