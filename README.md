@@ -48,7 +48,7 @@ A request sends `start`, `resolution` and one value per period; the response add
 
 ## Architecture
 
-A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage. The arrows are project references; the dashed one is the only exception, because `Program.cs` must register the storage at startup, while controllers and use cases see only the repository interface.
+A pragmatic Clean Architecture with four thin projects. Dependencies point inward, so the domain knows nothing about HTTP or storage. The arrows are project references; the dashed one is the only exception, because `Program.cs` must register the storage at startup, while controllers and use cases see only the repository interface. The SQL Server tables are drawn in [decision 4](docs/decisions.md#4-storage-sql-server-with-an-in-memory-option).
 
 ```mermaid
 flowchart LR

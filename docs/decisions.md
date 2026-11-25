@@ -40,6 +40,38 @@ Background on the domain is in [domain-notes.md](domain-notes.md), and the exact
 
 **Decision:** `ITimeSeriesRepository` lives in Application, with two implementations in Infrastructure chosen by `Storage:Provider`: SQL Server through EF Core (the default) and an in-memory store, which has to be asked for explicitly (the `inmemory` launch profile, and the tests). The SQL Server schema has three tables: `SeriesIdentity`, unique on (type, zones, resolution); `Series`, the API resource, clustered on (identity, start); and `Point`, one row per value, keyed on (identity, timestamp).
 
+```mermaid
+erDiagram
+    SeriesIdentity ||--o{ Series : "identifies"
+    Series ||--o{ Point : "holds, deleted with it"
+    SeriesIdentity ||--o{ Point : "keys"
+    SeriesIdentity {
+        int Id PK
+        varchar Type UK "Production, Consumption, CrossBorderFlow"
+        varchar BiddingZone UK "NO1 to DK2"
+        varchar ToBiddingZone UK "flows only, else NULL"
+        varchar Resolution UK "PT15M or PT60M"
+    }
+    Series {
+        uniqueidentifier Id PK "nonclustered"
+        int IdentityId FK "clustered and unique with Start"
+        datetime2 Start "UTC"
+        datetime2 End "UTC"
+        varchar Unit "MW"
+        int Version "optimistic concurrency"
+        datetime2 CreatedAt
+        datetime2 UpdatedAt
+    }
+    Point {
+        int IdentityId PK, FK "clustered key with Timestamp"
+        datetime2 Timestamp PK "UTC"
+        uniqueidentifier SeriesId FK "indexed"
+        decimal Value "18,3"
+    }
+```
+
+`PK` marks a primary key, `FK` a foreign key and `UK` a unique key. The unique key on `SeriesIdentity` spans all four columns together, and the clustered primary key of `Point` is identity plus timestamp: two series with the same identity can never store a value for the same instant.
+
 **Why:** SQL Server is where the rules hold for real, and the in-memory store still lets anyone run and test the API with only the .NET SDK. Defaulting to SQL Server means a server with missing configuration fails at startup with a clear message instead of silently keeping data in memory. Keying points on identity and timestamp makes overlaps impossible in the database itself and answers a time window with one index range read.
 
 **Rejected:** SQLite (not what production would use); MongoDB (fits whole-series reads, with one document per series per day under the 16 MB limit, but not time-window reads across series); one row per series with the values as a blob (no range reads, and overlaps could not be enforced by a key); EF Core migrations in the repository (tables are created at startup in development; in production, migrations would be applied by the deployment pipeline, not by the application).
