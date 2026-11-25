@@ -98,6 +98,31 @@ public abstract class TimeSeriesRepositoryContract : IAsyncLifetime
         Assert.Equal(2, (await Repository.GetAsync(stored.Id, Ct))!.Version);
     }
 
+    /// <summary>
+    /// Ten requests race to replace the same version; the version check inside the write lets exactly one win, and
+    /// the stored values are entirely the winner's, never a mix of several updates.
+    /// </summary>
+    [Fact]
+    public async Task ReplaceAsync_ParallelReplacementsOfSameVersion_StoresExactlyOne()
+    {
+        var stored = Series();
+        await Repository.AddAsync(stored, Ct);
+        var replacements = Enumerable.Range(1, 10)
+            .Select(i => stored.Replace(
+                new TimeSeriesDefinition(stored.Type, stored.BiddingZone, null, stored.Unit, stored.Resolution, stored.Start, [i, i, i]),
+                _midnight).Value)
+            .ToList();
+
+        var outcomes = await Task.WhenAll(replacements.Select(replacement =>
+            Task.Run(() => Repository.ReplaceAsync(replacement, expectedVersion: 1, Ct), Ct)));
+
+        Assert.Single(outcomes, outcome => outcome == WriteOutcome.Done);
+        Assert.Equal(9, outcomes.Count(outcome => outcome == WriteOutcome.VersionMismatch));
+        var final = (await Repository.GetAsync(stored.Id, Ct))!;
+        Assert.Equal(2, final.Version);
+        Assert.Contains(replacements, replacement => replacement.Values.SequenceEqual(final.Values));
+    }
+
     [Fact]
     public async Task ReplaceAsync_StaleExpectedVersion_ReturnsVersionMismatchAndKeepsStored()
     {
